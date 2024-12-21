@@ -1,7 +1,8 @@
 #include "simulation.hpp"
 
 // Records the results of the simulation in a ".csv" format file
-void write_file(const std::vector<sim_result> &data, fs::path directory)
+void write_file(const std::vector<sim_result> &data,
+                fs::path directory)
 {
     try
     {
@@ -45,7 +46,8 @@ void write_file(const std::vector<sim_result> &data, fs::path directory)
 
 // Get QBER range based on code rate of matrix. R_QBER_parameters must be sorted. Looks for the first set of parameters
 // where the code rate is less than or equal to the specified rate, and uses these parameters to generate a range of QBER values.
-std::vector<double> get_rate_based_QBER_range(const double code_rate, const std::vector<R_QBER_params> &R_QBER_parameters)
+std::vector<double> get_rate_based_QBER_range(const double code_rate,
+                                              const std::vector<R_QBER_params> &R_QBER_parameters)
 {
     std::vector<double> QBER;
     for (size_t i = 0; i < R_QBER_parameters.size(); i++)
@@ -78,112 +80,95 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
 
     if (CFG.USE_DENSE_MATRICES)
     {
-        read_dense_matrix(matrix_path, matrix);
+        matrix = read_dense_matrix(matrix_path);
     }
     else
     {
-        read_sparse_alist_matrix(matrix_path, matrix);
+        matrix = read_sparse_alist_matrix(matrix_path);
     }
 
     fmt::print(fg(fmt::color::green), "{}\n", ((matrix.is_regular) ? "Matrix H is regular." : "Matrix H is irregular."));
 
-    size_t num_check_nodes = matrix.num_check_nodes;
-    size_t num_bit_nodes = matrix.num_bit_nodes;
-    int *alice_bit_array = new int[num_bit_nodes];
-    int *bob_bit_array = new int[num_bit_nodes];
+    size_t num_check_nodes = matrix.check_nodes.size();
+    size_t num_bit_nodes = matrix.bit_nodes.size();
+    std::vector<int> alice_bit_array(num_bit_nodes);
+    std::vector<int> bob_bit_array(num_bit_nodes);
 
     XoshiroCpp::Xoshiro256PlusPlus prng(CFG.SIMULATION_SEED); 
-    double code_rate = static_cast<double>(matrix.num_check_nodes) / matrix.num_bit_nodes;
+
+    double code_rate = 1. - (static_cast<double>(num_check_nodes) / num_bit_nodes);
     std::vector<double> QBER = get_rate_based_QBER_range(code_rate, CFG.R_QBER_PARAMETERS);
-    for (size_t i = 0; i < QBER.size(); i++)
+
+    for (size_t i = 0; i < QBER.size(); ++i)
     {
         fmt::print(fg(fmt::color::green), "№:{}\n", i + 1);
 
-        generate_random_bit_array(prng, num_bit_nodes, alice_bit_array);
-        double initial_QBER = introduce_errors(prng, alice_bit_array, num_bit_nodes, QBER[i], bob_bit_array);
+        fill_random_bits(prng, alice_bit_array);
+        double initial_QBER = introduce_errors(prng, alice_bit_array, QBER[i], bob_bit_array);
         fmt::print(fg(fmt::color::green), "Actual QBER: {}\n", initial_QBER);
 
         if (initial_QBER == 0.)
         {
-            free_matrix_H(matrix);
-            delete[] alice_bit_array;
-            delete[] bob_bit_array;
             throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
         }
 
         int error_num = 0;
-        for (size_t i = 0; i < num_bit_nodes; i++)
+        for (size_t i = 0; i < num_bit_nodes; ++i)
         {
             error_num += alice_bit_array[i] ^ bob_bit_array[i];
         }
         fmt::print(fg(fmt::color::green), "Number of errors in a key: {}\n", error_num);
 
         LDPC_result try_result;
-        if (matrix.is_regular)
-        {
-            try_result = QKD_LDPC_regular(alice_bit_array, bob_bit_array, initial_QBER, matrix);
-        }
-        else
-        {
-            try_result = QKD_LDPC_irregular(alice_bit_array, bob_bit_array, initial_QBER, matrix);
-        }
+        try_result = QKD_LDPC(alice_bit_array, bob_bit_array, initial_QBER, matrix);
+  
         fmt::print(fg(fmt::color::green), "Iterations performed: {}\n", try_result.sp_res.iterations_num);
         fmt::print(fg(fmt::color::green), "{}\n\n", ((try_result.keys_match && try_result.sp_res.syndromes_match) ? "Error reconciliation SUCCESSFUL" : "Error reconciliation FAILED"));
     }
-
-    free_matrix_H(matrix);
-    delete[] alice_bit_array;
-    delete[] bob_bit_array;
 }
 
 // Prepares input data for batch simulation.
-void prepare_sim_inputs(const std::vector<fs::path> &matrix_paths, std::vector<sim_input> &sim_inputs_out)
+std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_paths)
 {
+    std::vector<sim_input> sim_inputs(matrix_paths.size());
     for (size_t i = 0; i < matrix_paths.size(); i++)
     {
         if (CFG.USE_DENSE_MATRICES)
         {
-            read_dense_matrix(matrix_paths[i], sim_inputs_out[i].matrix);
+            sim_inputs[i].matrix = read_dense_matrix(matrix_paths[i]);
         }
         else
         {
-            read_sparse_alist_matrix(matrix_paths[i], sim_inputs_out[i].matrix);
+            sim_inputs[i].matrix = read_sparse_alist_matrix(matrix_paths[i]);
         }
 
-        sim_inputs_out[i].matrix_path = matrix_paths[i];
+        sim_inputs[i].matrix_path = matrix_paths[i];
 
-        double code_rate = 1. - (static_cast<double>(sim_inputs_out[i].matrix.num_check_nodes) / sim_inputs_out[i].matrix.num_bit_nodes);
-        sim_inputs_out[i].QBER = get_rate_based_QBER_range(code_rate, CFG.R_QBER_PARAMETERS);
+        double code_rate = 1. - (static_cast<double>(sim_inputs[i].matrix.check_nodes.size()) / sim_inputs[i].matrix.bit_nodes.size());
+        sim_inputs[i].QBER = get_rate_based_QBER_range(code_rate, CFG.R_QBER_PARAMETERS);
     }
+    return sim_inputs;
 }
 
 // Runs a single QKD LDPC trial.
-trial_result run_trial(const H_matrix &matrix, const double QBER, size_t seed)
+trial_result run_trial(const H_matrix &matrix, 
+                       double QBER, 
+                       size_t seed)
 {
-    XoshiroCpp::Xoshiro256PlusPlus prng(seed);
-
     trial_result result;
-    int *alice_bit_array = new int[matrix.num_bit_nodes];
-    int *bob_bit_array = new int[matrix.num_bit_nodes];
-    generate_random_bit_array(prng, matrix.num_bit_nodes, alice_bit_array);
-    result.initial_QBER = introduce_errors(prng, alice_bit_array, matrix.num_bit_nodes, QBER, bob_bit_array);
+    XoshiroCpp::Xoshiro256PlusPlus prng(seed);
+    size_t num_bit_nodes = matrix.bit_nodes.size();
+    std::vector<int> alice_bit_array(num_bit_nodes);
+    std::vector<int> bob_bit_array(num_bit_nodes);
+
+    fill_random_bits(prng, alice_bit_array);
+    result.initial_QBER = introduce_errors(prng, alice_bit_array, QBER, bob_bit_array);
     if (result.initial_QBER == 0.)
     {
-        delete[] alice_bit_array;
-        delete[] bob_bit_array;
-        throw std::runtime_error("Key size '" + std::to_string(matrix.num_bit_nodes) + "' is too small for QBER.");
+        throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
     }
 
-    if (matrix.is_regular)
-    {
-        result.ldpc_res = QKD_LDPC_regular(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
-    }
-    else
-    {
-        result.ldpc_res = QKD_LDPC_irregular(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
-    }
-    delete[] alice_bit_array;
-    delete[] bob_bit_array;
+    result.ldpc_res = QKD_LDPC(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
 
     return result;
 }
@@ -231,7 +216,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
     for (size_t i = 0; i < sim_in.size(); i++)
     {
         const H_matrix &matrix = sim_in[i].matrix;
-        double code_rate = 1. - (static_cast<double>(matrix.num_check_nodes) / matrix.num_bit_nodes);
+        double code_rate = 1. - (static_cast<double>(matrix.check_nodes.size()) / matrix.bit_nodes.size());
         std::string matrix_filename = sim_in[i].matrix_path.filename().string();
         for (size_t j = 0; j < sim_in[i].QBER.size(); j++)
         {
@@ -244,7 +229,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             pool.detach_loop<size_t>(0, CFG.TRIALS_NUMBER,
                                      [&matrix, &QBER, &trial_results, &seeds, &curr_sim, &bar](size_t k)
                                      {
-                                         trial_results[k] = run_trial(matrix, QBER, seeds[k] + curr_sim);
+                                         trial_results[k] = run_trial(matrix, QBER, (seeds[k] + curr_sim));
                                          bar.tick(); // For correct time estimation
                                      });
             pool.wait();
@@ -298,8 +283,8 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
 
             sim_results[curr_sim].matrix_filename = matrix_filename;
             sim_results[curr_sim].is_regular = matrix.is_regular;
-            sim_results[curr_sim].num_bit_nodes = matrix.num_bit_nodes;
-            sim_results[curr_sim].num_check_nodes = matrix.num_check_nodes;
+            sim_results[curr_sim].num_bit_nodes = matrix.bit_nodes.size();
+            sim_results[curr_sim].num_check_nodes = matrix.check_nodes.size();
 
             sim_results[curr_sim].initial_QBER = trial_results[0].initial_QBER;
             sim_results[curr_sim].iterations_successful_sp_max = iterations_successful_sp_max;

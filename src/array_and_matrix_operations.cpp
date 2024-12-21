@@ -1,61 +1,61 @@
 #include "array_and_matrix_operations.hpp"
 
 // Convert a dense parity check matrix into an array containing information about bit nodes and associated check nodes (sparse matrix).
-void get_bit_nodes(const std::vector<std::vector<int>> &matrix, const int *const bit_nodes_weight, int **&bit_nodes_out)
+std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int>> &matrix, 
+                                            const std::vector<int> &bit_nodes_weight)
 {
     size_t num_bit_nodes = matrix[0].size();
     size_t num_check_nodes = matrix.size();
 
-    size_t n;
-    bit_nodes_out = new int *[num_bit_nodes];
+    std::vector<std::vector<int>> bit_nodes(num_bit_nodes);
+
     for (int i = 0; i < num_bit_nodes; i++)
     {
-        n = 0;
-        bit_nodes_out[i] = new int[bit_nodes_weight[i]];
+        bit_nodes[i].reserve(bit_nodes_weight[i]);
         for (int j = 0; j < num_check_nodes; j++)
         {
             if (matrix[j][i] == 1)
             {
-                bit_nodes_out[i][n] = j;
-                n++;
+                bit_nodes[i].push_back(j);
             }
         }
     }
+    return bit_nodes;
 }
 
 // Convert a dense parity check matrix into an array containing information about check nodes and associated bit nodes (sparse matrix).
-void get_check_nodes(const std::vector<std::vector<int>> &matrix, const int *const check_nodes_weight, int **&check_nodes_out)
+std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int>> &matrix, 
+                                              const std::vector<int> &check_nodes_weight)
 {
     size_t num_bit_nodes = matrix[0].size();
     size_t num_check_nodes = matrix.size();
 
-    size_t n;
-    check_nodes_out = new int *[num_check_nodes];
+    std::vector<std::vector<int>> check_nodes(num_check_nodes);
+
     for (int i = 0; i < num_check_nodes; i++)
     {
-        n = 0;
-        check_nodes_out[i] = new int[check_nodes_weight[i]];
+        check_nodes[i].reserve(check_nodes_weight[i]);
         for (int j = 0; j < num_bit_nodes; j++)
         {
             if (matrix[i][j] == 1)
             {
-                check_nodes_out[i][n] = j;
-                n++;
+                check_nodes[i].push_back(j);
             }
         }
     }
+    return check_nodes;
 }
 
-// Finding the maximum modulo LLR value in a given regular matrix.
-double get_max_llr_regular(const double *const *matrix, const size_t &nodes_weight, const size_t &rows_number)
+// Finding the maximum modulo LLR value in a given matrix.
+double get_max_llr(const std::vector<std::vector<double>> &matrix)
 {
     double max_abs_llr = 0;
     double curr_abs_llr = 0;
-    for (size_t i = 0; i < rows_number; i++)
+    for (size_t i = 0; i < matrix.size(); ++i)
     {
-        for (size_t j = 0; j < nodes_weight; j++)
+        for (size_t j = 0; j < matrix[i].size(); ++j)
         {
-            curr_abs_llr = abs(matrix[i][j]);
+            curr_abs_llr = std::abs(matrix[i][j]);
             if (curr_abs_llr > max_abs_llr)
             {
                 max_abs_llr = curr_abs_llr;
@@ -65,37 +65,14 @@ double get_max_llr_regular(const double *const *matrix, const size_t &nodes_weig
     return max_abs_llr;
 }
 
-// Finding the maximum modulo LLR value in a given irregular matrix.
-double get_max_llr_irregular(const double *const *matrix, const int *const nodes_weight, const size_t &rows_number)
+bool arrays_equal(const std::vector<int> &array1,
+                  const std::vector<int> &array2)
 {
-    double max_abs_llr = 0;
-    double curr_abs_llr = 0;
-    for (size_t i = 0; i < rows_number; i++)
+    if (array1.size() != array2.size())
     {
-        for (size_t j = 0; j < nodes_weight[i]; j++)
-        {
-            curr_abs_llr = abs(matrix[i][j]);
-            if (curr_abs_llr > max_abs_llr)
-            {
-                max_abs_llr = curr_abs_llr;
-            }
-        }
+        return false;
     }
-    return max_abs_llr;
-}
-
-// Freeing memory allocated for the parity check matrix.
-void free_matrix_H(H_matrix &matrix)
-{
-    free_matrix(matrix.bit_nodes, matrix.num_bit_nodes);
-    free_matrix(matrix.check_nodes, matrix.num_check_nodes);
-    delete[] matrix.bit_nodes_weight;
-    delete[] matrix.check_nodes_weight;
-}
-
-bool arrays_equal(const int *const array1, const int *const array2, const size_t &array_length)
-{
-    for (size_t i = 0; i < array_length; i++)
+    for (size_t i = 0; i < array1.size(); i++)
     {
         if (array1[i] != array2[i])
         {
@@ -106,7 +83,7 @@ bool arrays_equal(const int *const array1, const int *const array2, const size_t
 }
 
 // Function for reading a sparse matrix from a file in alist format (https://rptu.de/channel-codes/matrix-file-formats).
-void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
+H_matrix read_sparse_alist_matrix(const fs::path &matrix_path)
 {
     std::vector<std::string> line_vec;
     std::ifstream file(matrix_path);
@@ -165,8 +142,8 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
     size_t max_col_weight = vec_int[1][0];      // d^(v)_max
     size_t max_row_weight = vec_int[1][1];      // d^(c)_max
 
-    size_t num_bit_nodes = vec_int[2].size();
-    size_t num_check_nodes = vec_int[3].size();
+    size_t num_bit_nodes = vec_int[2].size();       // n
+    size_t num_check_nodes = vec_int[3].size();     // m
 
     size_t curr_line = 4;
 
@@ -186,11 +163,11 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
 
     // Initialization of node weights and check for matrix regularity
     bool is_regular = true;
-    matrix_out.bit_nodes_weight = new int[num_bit_nodes];
-    matrix_out.check_nodes_weight = new int[num_check_nodes];
+    std::vector<int> bit_nodes_weight(num_bit_nodes);
+    std::vector<int> check_nodes_weight(num_check_nodes);
     for (size_t i = 0; i < num_bit_nodes; i++)
     {
-        matrix_out.bit_nodes_weight[i] = vec_int[2][i];
+        bit_nodes_weight[i] = vec_int[2][i];
         if (vec_int[2][i] != vec_int[2][0])
         {
             is_regular = false;
@@ -198,7 +175,7 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
     }
     for (size_t i = 0; i < num_check_nodes; i++)
     {
-        matrix_out.check_nodes_weight[i] = vec_int[3][i];
+        check_nodes_weight[i] = vec_int[3][i];
         if (vec_int[3][i] != vec_int[3][0])
         {
             is_regular = false;
@@ -219,7 +196,6 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
         }
         if (non_zero_num != vec_int[2][i])
         {
-            free_matrix_H(matrix_out);
             throw std::runtime_error("Number of non-zero elements '" + std::to_string(non_zero_num) + "' in the line '" + std::to_string(curr_line + i + 1) + "' does not match the weight in the third line '" + std::to_string(vec_int[2][i]) + "'. File: " + matrix_path.string());
         }
     }
@@ -237,28 +213,27 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
         }
         if (non_zero_num != vec_int[3][i])
         {
-            free_matrix_H(matrix_out);
             throw std::runtime_error("Number of non-zero elements '" + std::to_string(non_zero_num) + "' in the line '" + std::to_string(curr_line + i + 1) + "' does not match the weight in the fourth line '" + std::to_string(vec_int[3][i]) + "'. File: " + matrix_path.string());
         }
     }
 
     // Filling the matrix of bit nodes
+    H_matrix matrix_out{};
     try
     {
         curr_line = 4;
-        matrix_out.bit_nodes = new int *[num_bit_nodes];
+        matrix_out.bit_nodes.resize(num_bit_nodes);
         for (size_t i = 0; i < num_bit_nodes; ++i)
         {
-            matrix_out.bit_nodes[i] = new int[matrix_out.bit_nodes_weight[i]];
-            for (size_t j = 0; j < matrix_out.bit_nodes_weight[i]; ++j)
+            matrix_out.bit_nodes[i].reserve(bit_nodes_weight[i]);
+            for (size_t j = 0; j < bit_nodes_weight[i]; ++j)
             {
-                matrix_out.bit_nodes[i][j] = (vec_int[curr_line + i][j] - 1);
+                matrix_out.bit_nodes[i].push_back(vec_int[curr_line + i][j] - 1);
             }
         }
     }
     catch (const std::exception &e)
     {
-        free_matrix_H(matrix_out);
         fmt::print(stderr, fg(fmt::color::red), "An error occurred while creating 'bit_nodes' matrix from file: {}\n", matrix_path.string());
         throw;
     }
@@ -267,32 +242,27 @@ void read_sparse_alist_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
     try
     {
         curr_line += num_bit_nodes;
-        matrix_out.check_nodes = new int *[num_check_nodes];
+        matrix_out.check_nodes.resize(num_check_nodes);
         for (size_t i = 0; i < num_check_nodes; ++i)
         {
-            matrix_out.check_nodes[i] = new int[matrix_out.check_nodes_weight[i]];
-            for (size_t j = 0; j < matrix_out.check_nodes_weight[i]; ++j)
+            matrix_out.check_nodes[i].reserve(check_nodes_weight[i]);
+            for (size_t j = 0; j < check_nodes_weight[i]; ++j)
             {
-                matrix_out.check_nodes[i][j] = (vec_int[curr_line + i][j] - 1);
+                matrix_out.check_nodes[i].push_back(vec_int[curr_line + i][j] - 1);
             }
         }
     }
     catch (const std::exception &e)
     {
-        free_matrix_H(matrix_out);
         fmt::print(stderr, fg(fmt::color::red), "An error occurred while creating 'check_nodes' matrix from file: {}\n", matrix_path.string());
         throw;
     }
-
-    matrix_out.num_check_nodes = row_num;
-    matrix_out.num_bit_nodes = col_num;
-    matrix_out.max_check_nodes_weight = max_row_weight;
-    matrix_out.max_bit_nodes_weight = max_col_weight;
     matrix_out.is_regular = is_regular;
+    return matrix_out;
 }
 
 // Read dense matrix from file.
-void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
+H_matrix read_dense_matrix(const fs::path &matrix_path)
 {
     std::vector<std::string> line_vec;
     std::ifstream file(matrix_path);
@@ -314,7 +284,7 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
         throw std::runtime_error("File is empty or cannot be read properly: " + matrix_path.string());
     }
 
-    std::vector<std::vector<int>> vec_int;
+    std::vector<std::vector<int>> dense_matrix;
     try
     {
         for (const auto &line : line_vec)
@@ -330,7 +300,7 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
                 }
                 numbers.push_back(number);
             }
-            vec_int.push_back(numbers);
+            dense_matrix.push_back(numbers);
         }
     }
     catch (const std::exception &e)
@@ -339,19 +309,19 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
         throw;
     }
 
-    for (size_t i = 0; i < vec_int.size(); i++)
+    for (size_t i = 0; i < dense_matrix.size(); i++)
     {
-        if (vec_int[0].size() != vec_int[i].size())
+        if (dense_matrix[0].size() != dense_matrix[i].size())
         {
             throw std::runtime_error("Different lengths of rows in a matrix. File: " + matrix_path.string());
         }
     }
 
-    size_t col_num = vec_int[0].size();
-    size_t row_num = vec_int.size();
+    size_t col_num = dense_matrix[0].size();    //n - bit_nodes number
+    size_t row_num = dense_matrix.size();       //m - check nodes number
 
-    matrix_out.bit_nodes_weight = new int[col_num];
-    matrix_out.check_nodes_weight = new int[row_num];
+    std::vector<int> bit_nodes_weight(col_num);
+    std::vector<int> check_nodes_weight(row_num);
 
     // Counting column weights and determining the maximum weight
     size_t curr_weight = 0;
@@ -361,14 +331,13 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
         curr_weight = 0;
         for (size_t j = 0; j < row_num; j++)
         {
-            curr_weight += vec_int[j][i];
+            curr_weight += dense_matrix[j][i];
         }
         if (curr_weight <= 0)
         {
-            free_matrix_H(matrix_out);
             throw std::runtime_error("Column '" + std::to_string(i + 1) + "' weight cannot be equal to or less than zero. File: " + matrix_path.string());
         }
-        matrix_out.bit_nodes_weight[i] = curr_weight;
+        bit_nodes_weight[i] = static_cast<int>(curr_weight);
         if (curr_weight > max_col_weight)
         {
             max_col_weight = curr_weight;
@@ -379,13 +348,12 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
     size_t max_row_weight = 0;
     for (size_t i = 0; i < row_num; i++)
     {
-        curr_weight = accumulate(vec_int[i].begin(), vec_int[i].end(), 0);
+        curr_weight = accumulate(dense_matrix[i].begin(), dense_matrix[i].end(), 0);
         if (curr_weight <= 0)
         {
-            free_matrix_H(matrix_out);
             throw std::runtime_error("Row '" + std::to_string(i + 1) + "' weight cannot be equal to or less than zero. File: " + matrix_path.string());
         }
-        matrix_out.check_nodes_weight[i] = curr_weight;
+        check_nodes_weight[i] = static_cast<int>(curr_weight);
         if (curr_weight > max_row_weight)
         {
             max_row_weight = curr_weight;
@@ -395,7 +363,7 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
     bool is_regular = true;
     for (size_t i = 0; i < col_num; i++)
     {
-        if (matrix_out.bit_nodes_weight[0] != matrix_out.bit_nodes_weight[i])
+        if (bit_nodes_weight[0] != bit_nodes_weight[i])
         {
             is_regular = false;
         }
@@ -403,113 +371,84 @@ void read_dense_matrix(const fs::path &matrix_path, H_matrix &matrix_out)
 
     for (size_t i = 0; i < row_num; i++)
     {
-        if (matrix_out.check_nodes_weight[0] != matrix_out.check_nodes_weight[i])
+        if (check_nodes_weight[0] != check_nodes_weight[i])
         {
             is_regular = false;
         }
     }
 
     // Filling bit and check nodes 
-    get_bit_nodes(vec_int, matrix_out.bit_nodes_weight, matrix_out.bit_nodes);
-    get_check_nodes(vec_int, matrix_out.check_nodes_weight, matrix_out.check_nodes);
-
-    matrix_out.num_check_nodes = row_num;
-    matrix_out.num_bit_nodes = col_num;
-    matrix_out.max_check_nodes_weight = max_row_weight;
-    matrix_out.max_bit_nodes_weight = max_col_weight;
+    H_matrix matrix_out{};
+    matrix_out.bit_nodes = get_bit_nodes(dense_matrix, bit_nodes_weight);
+    matrix_out.check_nodes = get_check_nodes(dense_matrix, check_nodes_weight);
     matrix_out.is_regular = is_regular;
+    return matrix_out;
 }
 
 // Generates Alice's key.
-void generate_random_bit_array(XoshiroCpp::Xoshiro256PlusPlus &prng, size_t length, int *const random_bit_array_out)
+void fill_random_bits(XoshiroCpp::Xoshiro256PlusPlus &prng,
+                      std::vector<int> &bit_array)
 {
     std::uniform_int_distribution<int> distribution(0, 1);
-    for (int i = 0; i < length; ++i)
+
+    // Generate random bits and fill the vector
+    for (size_t i = 0; i < bit_array.size(); ++i)
     {
-        random_bit_array_out[i] = distribution(prng);
+        bit_array[i] = distribution(prng);
     }
 }
 
 // Generates Bob's key by making errors in Alice's key. Generates the exact number of errors in the key and returns the exact QBER.
-double introduce_errors(XoshiroCpp::Xoshiro256PlusPlus &prng, const int *const bit_array, size_t array_length, double error_probability, int *const bit_array_with_errors_out)
+double introduce_errors(XoshiroCpp::Xoshiro256PlusPlus &prng, 
+                        const std::vector<int> &bit_array, 
+                        double QBER, 
+                        std::vector<int> &bit_array_with_errors_out)
 {
-    size_t num_errors = static_cast<size_t>(array_length * error_probability);
-    if (num_errors == 0)
+    size_t array_length = bit_array.size();
+    size_t num_errors = static_cast<size_t>(array_length * QBER);
+
+    bit_array_with_errors_out = bit_array;
+
+    if (num_errors > 0)
     {
-        std::copy(bit_array, bit_array + array_length, bit_array_with_errors_out);
-    }
-    else
-    {
-        size_t *error_positions = new size_t[array_length];
+        std::vector<size_t> error_positions(array_length);
         for (size_t i = 0; i < array_length; ++i)
         {
             error_positions[i] = i;
         }
 
-        std::shuffle(error_positions, error_positions + array_length, prng);
-        std::copy(bit_array, bit_array + array_length, bit_array_with_errors_out);
+        std::shuffle(error_positions.begin(), error_positions.end(), prng);
 
         for (size_t i = 0; i < num_errors; ++i)
         {
             bit_array_with_errors_out[error_positions[i]] ^= 1;
         }
-
-        delete[] error_positions;
     }
     return static_cast<double>(num_errors) / array_length;
 }
 
-// Computes the key syndrome using a regular parity check matrix.
-void calculate_syndrome_regular(const int *const bit_array, const H_matrix &matrix, int *const syndrome_out)
+// Computes the key syndrome using parity check matrix.
+void calculate_syndrome(const std::vector<int> &bit_array,
+                        const H_matrix &matrix, 
+                        std::vector<int> &syndrome_out)
 {
-    std::fill(syndrome_out, syndrome_out + matrix.num_check_nodes, 0);
-    for (size_t i = 0; i < matrix.num_check_nodes; i++)
+    std::fill(syndrome_out.begin(), syndrome_out.end(), 0);
+    for (size_t i = 0; i < matrix.check_nodes.size(); ++i)          // CN number
     {
-        for (size_t j = 0; j < matrix.max_check_nodes_weight; j++)
+        for (size_t j = 0; j < matrix.check_nodes[i].size(); ++j)   // Their weights
         {
             syndrome_out[i] ^= bit_array[matrix.check_nodes[i][j]];
-        }
-    }
-}
-
-// Computes the key syndrome using a irregular parity check matrix.
-void calculate_syndrome_irregular(const int *const bit_array, const H_matrix &matrix, int *const syndrome_out)
-{
-    std::fill(syndrome_out, syndrome_out + matrix.num_check_nodes, 0);
-    for (size_t i = 0; i < matrix.num_check_nodes; i++)
-    {
-        for (size_t j = 0; j < matrix.check_nodes_weight[i]; j++)
-        {
-            syndrome_out[i] ^= bit_array[matrix.check_nodes[i][j]];
-        }
-    }
-}
-
-// Limiting the LLR values of messages in a regular matrix to a given threshold.
-void threshold_matrix_regular(double *const *matrix, const size_t &rows_number, const size_t &nodes_weight, const double &msg_threshold)
-{
-    for (size_t i = 0; i < rows_number; i++)
-    {
-        for (size_t j = 0; j < nodes_weight; j++)
-        {
-            if (matrix[i][j] > msg_threshold)
-            {
-                matrix[i][j] = msg_threshold;
-            }
-            else if (matrix[i][j] < -msg_threshold)
-            {
-                matrix[i][j] = -msg_threshold;
-            }
         }
     }
 }
 
 // Limiting the LLR values of messages in irregular matrix to a given threshold.
-void threshold_matrix_irregular(double *const *matrix, const size_t &rows_number, const int *const nodes_weight, const double &msg_threshold)
+void threshold_matrix(std::vector<std::vector<double>> &matrix, 
+                      const double &msg_threshold)
 {
-    for (size_t i = 0; i < rows_number; i++)
+    for (size_t i = 0; i < matrix.size(); ++i)
     {
-        for (size_t j = 0; j < nodes_weight[i]; j++)
+        for (size_t j = 0; j < matrix[i].size(); ++j)
         {
             if (matrix[i][j] > msg_threshold)
             {

@@ -1,16 +1,16 @@
 #include "utils.hpp"
 
-void print_array(const int *const array, size_t array_length)
+void print_array(const std::vector<int> &array)
 {
-    for (size_t i = 0; i < array_length; i++)
+    for (size_t i = 0; i < array.size(); i++)
     {
         fmt::print(fg(fmt::color::blue), "{} ", array[i]);
     }
 }
 
-void print_array(const double *const array, size_t array_length)
+void print_array(const std::vector<double> &array)
 {
-    for (size_t i = 0; i < array_length; i++)
+    for (size_t i = 0; i < array.size(); i++)
     {
         fmt::print(fg(fmt::color::blue), "{:.4} ", array[i]);
     }

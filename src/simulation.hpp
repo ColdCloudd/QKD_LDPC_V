@@ -42,9 +42,13 @@ struct sim_result
     double ratio_trials_successful_ldpc{};      // Success rate of the QKD LDPC error reconciliation. Success when Bob and Alice's keys match.
 };
 
-void write_file(const std::vector<sim_result> &data, fs::path directory);
-std::vector<double> get_rate_based_QBER_range(const double code_rate, const std::vector<R_QBER_params> &R_QBER_parameters);
+void write_file(const std::vector<sim_result> &data,
+                fs::path directory);
+std::vector<double> get_rate_based_QBER_range(const double code_rate,
+                                              const std::vector<R_QBER_params> &R_QBER_parameters);
 void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path);
-void prepare_sim_inputs(const std::vector<fs::path> &matrix_paths, std::vector<sim_input> &sim_inputs_out);
-trial_result run_trial(const H_matrix &matrix, const double QBER, size_t seed);
+std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_paths);
+trial_result run_trial(const H_matrix &matrix, 
+                       double QBER, 
+                       size_t seed);
 std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &sim_in);
