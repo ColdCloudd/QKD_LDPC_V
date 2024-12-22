@@ -213,6 +213,20 @@ LDPC_result QKD_LDPC(const std::vector<int> &alice_bit_array,
 
     ldpc_res.keys_match = arrays_equal(alice_bit_array, bob_solution);
 
+    if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+    {
+        std::vector<int> alice_bit_array_pm;
+        std::vector<int> bob_bit_array_pm;
+        privacy_maintenance(matrix, alice_bit_array, bob_solution, alice_bit_array_pm, bob_bit_array_pm);
+        if (CFG.TRACE_QKD_LDPC)
+        {
+            fmt::print(fg(fmt::color::blue), "\nAlice bit array after privacy maintenance:\n");
+            print_array(alice_bit_array_pm);
+            fmt::print(fg(fmt::color::blue), "\nBob bit array after privacy maintenance:\n");
+            print_array(bob_bit_array_pm);
+        }
+    }    
+
     if (CFG.TRACE_QKD_LDPC)
     {
         fmt::print(fg(fmt::color::blue), "\n\nIterations performed: {}\n", ldpc_res.sp_res.iterations_num);

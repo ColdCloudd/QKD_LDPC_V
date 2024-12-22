@@ -46,6 +46,7 @@ config_data get_config_data(fs::path config_path)
         }
 
         cfg.INTERACTIVE_MODE = config["interactive_mode"].template get<bool>();
+        cfg.ENABLE_PRIVACY_MAINTENANCE = config["enable_privacy_maintenance"].template get<bool>();
 
         cfg.SUM_PRODUCT_MAX_ITERATIONS = config["sum_product_max_iterations"].template get<size_t>();
         if (cfg.SUM_PRODUCT_MAX_ITERATIONS < 1)

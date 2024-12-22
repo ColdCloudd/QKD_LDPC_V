@@ -121,7 +121,7 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
 
         LDPC_result try_result;
         try_result = QKD_LDPC(alice_bit_array, bob_bit_array, initial_QBER, matrix);
-  
+        
         fmt::print(fg(fmt::color::green), "Iterations performed: {}\n", try_result.sp_res.iterations_num);
         fmt::print(fg(fmt::color::green), "{}\n\n", ((try_result.keys_match && try_result.sp_res.syndromes_match) ? "Error reconciliation SUCCESSFUL" : "Error reconciliation FAILED"));
     }

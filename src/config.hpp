@@ -22,18 +22,21 @@ struct R_QBER_params
 
 struct config_data
 {
-    // Number of threads for parallelizing runs
+    // Number of threads for parallelizing runs.
     size_t THREADS_NUMBER{};
 
-    // Number of runs with one combination
+    // Number of runs with one combination.
     size_t TRIALS_NUMBER{};
 
-    // Seed of simulation
+    // Seed of simulation.
     size_t SIMULATION_SEED{};
 
     // If true, the user can select the parity check matrix and run tests with it. Otherwise, the BATCH MODE works, 
     // which reads all parity check matrices from the specified directory and runs tests with them and writes the results to a file.
     bool INTERACTIVE_MODE{};
+
+    // Enables privacy maintenance after protocol execution.
+    bool ENABLE_PRIVACY_MAINTENANCE{}; 
 
     // The maximum number of iterations of the sum-product algorithm. 
     // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.

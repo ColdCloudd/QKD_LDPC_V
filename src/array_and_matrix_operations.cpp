@@ -82,6 +82,97 @@ bool arrays_equal(const std::vector<int> &array1,
     return true;
 }
 
+// Find the first element in array1 that is not present in array2
+int find_available_index(const std::vector<int>& array1, 
+                         const std::vector<int>& array2) 
+{
+    for (int item : array1) 
+    {
+        // Check if the current item is not found in array2
+        if (std::find(array2.begin(), array2.end(), item) == array2.end()) 
+        {
+            return item;
+        }
+    }
+    // If all elements in array1 are present in array2, return -1
+    return -1;
+}
+
+// Determine positions of bits to be removed from key based on parity-check matrix for privacy maintenance.
+void get_bits_positions_to_remove(H_matrix &matrix)
+{
+    auto& bit_nodes = matrix.bit_nodes;
+
+    // Vector of pairs: (index of the bit node, corresponding check node indices)
+    std::vector<std::pair<int, std::vector<int>>> indexed_bit_nodes;
+    indexed_bit_nodes.reserve(bit_nodes.size());
+    for (size_t i = 0; i < bit_nodes.size(); ++i) 
+    {
+        indexed_bit_nodes.emplace_back(i, bit_nodes[i]);
+    }
+
+    // Sort bit nodes by the number of their connections (ascending order). Sort by column weight in H.
+    sort(indexed_bit_nodes.begin(), indexed_bit_nodes.end(),
+        [](const std::pair<int, std::vector<int>>& a, const std::pair<int, std::vector<int>>& b) 
+        {
+            return a.second.size() < b.second.size();
+        });
+    
+    size_t num_check_nodes = matrix.check_nodes.size();
+
+    // Indices of bits to be removed from key
+    matrix.bits_to_remove.reserve(num_check_nodes);
+
+    // For tracking check nodes that already processed
+    std::vector<int> check_node_indexes;
+    check_node_indexes.reserve(num_check_nodes);
+
+    for (const auto& bit_node : indexed_bit_nodes) 
+    {
+        int bit_node_idx = bit_node.first;
+        const std::vector<int>& check_idx = bit_node.second;
+        int idx = find_available_index(check_idx, check_node_indexes);
+        if (idx != -1) 
+        {
+            matrix.bits_to_remove.push_back(bit_node_idx);
+            check_node_indexes.push_back(idx);      // Mark the check node index as used
+        }
+    }
+    // Sort in ascending order
+    std::sort(matrix.bits_to_remove.begin(), matrix.bits_to_remove.end());
+}
+
+// Maintaining privacy by removing m bits from the Alice and Bob keys.
+void privacy_maintenance(const H_matrix &matrix, 
+                         const std::vector<int>& array1, 
+                         const std::vector<int>& array2,
+                         std::vector<int>& array1_out,
+                         std::vector<int>& array2_out)
+{
+    auto& bits_to_remove = matrix.bits_to_remove;
+
+    size_t btr_len = bits_to_remove.size();
+    size_t new_arr_len = array1.size() - btr_len;
+    array1_out.resize(new_arr_len);
+    array2_out.resize(new_arr_len);
+
+    size_t n = 0;
+    size_t m = 0;
+    for (size_t i = 0; i < array1.size(); ++i)
+    {
+        if (n < btr_len && bits_to_remove[n] == i)
+        {
+            ++n;
+        }
+        else
+        {
+            array1_out[m] = array1[i];
+            array2_out[m] = array2[i];
+            ++m;
+        }
+    }
+}
+
 // Function for reading a sparse matrix from a file in alist format (https://rptu.de/channel-codes/matrix-file-formats).
 H_matrix read_sparse_alist_matrix(const fs::path &matrix_path)
 {
@@ -257,7 +348,12 @@ H_matrix read_sparse_alist_matrix(const fs::path &matrix_path)
         fmt::print(stderr, fg(fmt::color::red), "An error occurred while creating 'check_nodes' matrix from file: {}\n", matrix_path.string());
         throw;
     }
+
     matrix_out.is_regular = is_regular;
+    if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+    {
+        get_bits_positions_to_remove(matrix_out);
+    }
     return matrix_out;
 }
 
@@ -381,6 +477,10 @@ H_matrix read_dense_matrix(const fs::path &matrix_path)
     H_matrix matrix_out{};
     matrix_out.bit_nodes = get_bit_nodes(dense_matrix, bit_nodes_weight);
     matrix_out.check_nodes = get_check_nodes(dense_matrix, check_nodes_weight);
+    if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+    {
+        get_bits_positions_to_remove(matrix_out);
+    }
     matrix_out.is_regular = is_regular;
     return matrix_out;
 }
