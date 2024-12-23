@@ -38,9 +38,12 @@ struct config_data
     // Enables privacy maintenance after protocol execution.
     bool ENABLE_PRIVACY_MAINTENANCE{}; 
 
-    // The maximum number of iterations of the sum-product algorithm. 
+    // Use MSA (Min-Sum Algorithm) decoding algorithm instead of SPA (Sum-Product Algorithm).
+    bool USE_MIN_SUM_DECODING_ALG{};
+
+    // The maximum number of iterations of the decoding algorithm.
     // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.
-    size_t SUM_PRODUCT_MAX_ITERATIONS{};
+    size_t DECODING_ALG_MAX_ITERATIONS{};
 
     // Use dense matrices (folder dense_matrices) instead of sparse matrices (folder alist_sparse_matrices).
     bool USE_DENSE_MATRICES{};
@@ -48,18 +51,18 @@ struct config_data
     // Output intermediate results of LDPC operation to the console.
     bool TRACE_QKD_LDPC{};
 
-    // Output intermediate results of the sum-product algorithm to the console.
-    bool TRACE_SUM_PRODUCT{};
+    // Output intermediate results of the decoding algorithm to the console.
+    bool TRACE_DECODING_ALG{};
 
-    // Console output of maximum log likelihood ratios (LLR) values of the message during the sum-product algorithm.
-    bool TRACE_SUM_PRODUCT_LLR{};
+    // Console output of maximum log likelihood ratios (LLR) values of the message during the decoding algorithm.
+    bool TRACE_DECODING_ALG_LLR{};
 
     // Enables limitation on the maximum LLR value of the message, which cannot exceed the set threshold. 
-    // If the set threshold is exceeded, the value is set equal to SUM_PRODUCT_MSG_LLR_THRESHOLD.
-    bool ENABLE_SUM_PRODUCT_MSG_LLR_THRESHOLD{};
+    // If the set threshold is exceeded, the value is set equal to DECODING_ALG_MSG_LLR_THRESHOLD.
+    bool ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD{};
 
     // The maximum LLR value a message can have.
-    double SUM_PRODUCT_MSG_LLR_THRESHOLD{};
+    double DECODING_ALG_MSG_LLR_THRESHOLD{};
 
     // Code rate and QBER correspondence set.
     std::vector<R_QBER_params> R_QBER_PARAMETERS{};

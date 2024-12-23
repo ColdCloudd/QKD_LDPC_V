@@ -47,23 +47,24 @@ config_data get_config_data(fs::path config_path)
 
         cfg.INTERACTIVE_MODE = config["interactive_mode"].template get<bool>();
         cfg.ENABLE_PRIVACY_MAINTENANCE = config["enable_privacy_maintenance"].template get<bool>();
+        cfg.USE_MIN_SUM_DECODING_ALG = config["use_min_sum_decoding_algorithm"].template get<bool>();
 
-        cfg.SUM_PRODUCT_MAX_ITERATIONS = config["sum_product_max_iterations"].template get<size_t>();
-        if (cfg.SUM_PRODUCT_MAX_ITERATIONS < 1)
+        cfg.DECODING_ALG_MAX_ITERATIONS = config["decoding_algorithm_max_iterations"].template get<size_t>();
+        if (cfg.DECODING_ALG_MAX_ITERATIONS < 1)
         {
-            throw std::runtime_error("Minimum number of sum-product iterations must be >= 1!");
+            throw std::runtime_error("Minimum number of decoding algorithm iterations must be >= 1!");
         }
 
         cfg.USE_DENSE_MATRICES = config["use_dense_matrices"].template get<bool>();
         cfg.TRACE_QKD_LDPC = config["trace_qkd_ldpc"].template get<bool>();
-        cfg.TRACE_SUM_PRODUCT = config["trace_sum_product"].template get<bool>();
-        cfg.TRACE_SUM_PRODUCT_LLR = config["trace_sum_product_llr"].template get<bool>();
-        cfg.ENABLE_SUM_PRODUCT_MSG_LLR_THRESHOLD = config["enable_sum_product_msg_llr_threshold"].template get<bool>();
+        cfg.TRACE_DECODING_ALG = config["trace_decoding_algorithm"].template get<bool>();
+        cfg.TRACE_DECODING_ALG_LLR = config["trace_decoding_algorithm_llr"].template get<bool>();
+        cfg.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD = config["enable_decoding_algorithm_msg_llr_threshold"].template get<bool>();
 
-        if (cfg.ENABLE_SUM_PRODUCT_MSG_LLR_THRESHOLD)
+        if (cfg.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD)
         {
-            cfg.SUM_PRODUCT_MSG_LLR_THRESHOLD = config["sum_product_msg_llr_threshold"].template get<double>();
-            if (cfg.SUM_PRODUCT_MSG_LLR_THRESHOLD <= 0.)
+            cfg.DECODING_ALG_MSG_LLR_THRESHOLD = config["decoding_algorithm_msg_llr_threshold"].template get<double>();
+            if (cfg.DECODING_ALG_MSG_LLR_THRESHOLD <= 0.)
             {
                 throw std::runtime_error("Sum-product message LLR threshold must be > 0!");
             }

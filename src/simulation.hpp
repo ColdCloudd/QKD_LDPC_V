@@ -34,21 +34,26 @@ struct sim_result
     size_t num_bit_nodes{};                     // Number of bit nodes, which is defined as the number of columns in the parity check matrix.
     size_t num_check_nodes{};                   // Number of check nodes, which is defined as the number of rows in the parity check matrix.
     double initial_QBER{};                       // An accurate QBER that corresponds to the number of errors in the key.
-    size_t iterations_successful_sp_max{};      // The maximum number of iterations of the sum-product algorithm in which Alice's syndrome matched Bob's syndrome (i.e. successful).
-    size_t iterations_successful_sp_min{};      // The minimum number of iterations of the sum-product algorithm.
-    double iterations_successful_sp_mean{};     // The mean number of iterations of the sum-product algorithm. 
-    double iterations_successful_sp_std_dev{};  // The standard deviation of iterations of the sum-product algorithm. 
-    double ratio_trials_successful_sp{};        // Success rate of the sum-product algorithm. Success when Bob's syndrome matches Alice's.
-    double ratio_trials_successful_ldpc{};      // Success rate of the QKD LDPC error reconciliation. Success when Bob and Alice's keys match.
+    size_t iter_success_dec_alg_max{};      // The maximum number of iterations of the decoding algorithm (SPA or MSA) in which Alice's syndrome matched Bob's syndrome (i.e. successful).
+    size_t iter_success_dec_alg_min{};      // The minimum number of iterations of the decoding algorithm.
+    double iter_success_dec_alg_mean{};     // The mean number of iterations of the decoding algorithm. 
+    double iter_success_dec_alg_std_dev{};  // The standard deviation of iterations of the decoding algorithm. 
+    double ratio_trials_success_dec_alg{};        // Success rate of the decoding algorithm. Success when Bob's syndrome matches Alice's.
+    double ratio_trials_success_ldpc{};      // Success rate of the QKD LDPC error reconciliation. Success when Bob and Alice's keys match.
 };
 
 void write_file(const std::vector<sim_result> &data,
                 fs::path directory);
+
 std::vector<double> get_rate_based_QBER_range(const double code_rate,
                                               const std::vector<R_QBER_params> &R_QBER_parameters);
+
 void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path);
+
 std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_paths);
+
 trial_result run_trial(const H_matrix &matrix, 
                        double QBER, 
                        size_t seed);
+                       
 std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &sim_in);

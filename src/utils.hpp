@@ -13,8 +13,11 @@
 namespace fs = std::filesystem;
 
 void print_array(const std::vector<int> &array);
+
 void print_array(const std::vector<double> &array);
+
 std::vector<fs::path> get_file_paths_in_directory(const fs::path &directory_path);
+
 fs::path select_matrix_file(const std::vector<fs::path> &matrix_paths);
 
 //Outputs to the console matrix.

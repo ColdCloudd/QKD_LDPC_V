@@ -10,8 +10,9 @@ void write_file(const std::vector<sim_result> &data,
         {
             fs::create_directories(directory);
         }
-        std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",max_sum_prod_iters=" +
-                               std::to_string(CFG.SUM_PRODUCT_MAX_ITERATIONS) + ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
+        std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",decoding_alg=" + 
+                               ((CFG.USE_MIN_SUM_DECODING_ALG)?"MSA":"SPA") + ",max_decoding_alg_iters=" +
+                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
         std::string extension = ".csv";
         fs::path result_file_path = directory / (base_filename + extension);
 
@@ -24,16 +25,16 @@ void write_file(const std::vector<sim_result> &data,
 
         std::fstream fout;
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
-        fout << "№;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_SP_MEAN;ITERATIONS_SUCCESSFUL_SP_STD_DEV;ITERATIONS_SUCCESSFUL_SP_MIN;ITERATIONS_SUCCESSFUL_SP_MAX;" << 
-        "RATIO_TRIALS_SUCCESSFUL_SP;RATIO_TRIALS_SUCCESSFUL_LDPC;FER\n";
+        fout << "№;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_DEC_ALG_MEAN;ITERATIONS_SUCCESSFUL_DEC_ALG_STD_DEV;ITERATIONS_SUCCESSFUL_DEC_ALG_MIN;ITERATIONS_SUCCESSFUL_DEC_ALG_MAX;" << 
+        "RATIO_TRIALS_SUCCESSFUL_DEC_ALG;RATIO_TRIALS_SUCCESSFUL_LDPC;FER\n";
         for (size_t i = 0; i < data.size(); i++)
         {
             fout << data[i].sim_number << ";" << data[i].matrix_filename << ";" << (data[i].is_regular ? "regular" : "irregular") << ";" 
                  << 1. - (static_cast<double>(data[i].num_check_nodes) / data[i].num_bit_nodes) << ";" << data[i].num_check_nodes << ";" 
-                 << data[i].num_bit_nodes << ";" << data[i].initial_QBER << ";" << data[i].iterations_successful_sp_mean << ";" 
-                 << data[i].iterations_successful_sp_std_dev << ";" << data[i].iterations_successful_sp_min << ";" 
-                 << data[i].iterations_successful_sp_max << ";" << data[i].ratio_trials_successful_sp << ";" 
-                 << data[i].ratio_trials_successful_ldpc << ";" << 1. - data[i].ratio_trials_successful_ldpc << "\n";
+                 << data[i].num_bit_nodes << ";" << data[i].initial_QBER << ";" << data[i].iter_success_dec_alg_mean << ";" 
+                 << data[i].iter_success_dec_alg_std_dev << ";" << data[i].iter_success_dec_alg_min << ";" 
+                 << data[i].iter_success_dec_alg_max << ";" << data[i].ratio_trials_success_dec_alg << ";" 
+                 << data[i].ratio_trials_success_ldpc << ";" << 1. - data[i].ratio_trials_success_ldpc << "\n";
         }
         fout.close();
     }
@@ -122,8 +123,8 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
         LDPC_result try_result;
         try_result = QKD_LDPC(alice_bit_array, bob_bit_array, initial_QBER, matrix);
         
-        fmt::print(fg(fmt::color::green), "Iterations performed: {}\n", try_result.sp_res.iterations_num);
-        fmt::print(fg(fmt::color::green), "{}\n\n", ((try_result.keys_match && try_result.sp_res.syndromes_match) ? "Error reconciliation SUCCESSFUL" : "Error reconciliation FAILED"));
+        fmt::print(fg(fmt::color::green), "Iterations performed: {}\n", try_result.decoding_res.iterations_num);
+        fmt::print(fg(fmt::color::green), "{}\n\n", ((try_result.keys_match && try_result.decoding_res.syndromes_match) ? "Error reconciliation SUCCESSFUL" : "Error reconciliation FAILED"));
     }
 }
 
@@ -234,49 +235,49 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
                                      });
             pool.wait();
 
-            size_t trials_successful_sp = 0;
+            size_t trials_successful_decoding = 0;
             size_t trials_successful_ldpc = 0;
-            size_t iterations_successful_sp_max = 0;
-            size_t iterations_successful_sp_min = CFG.SUM_PRODUCT_MAX_ITERATIONS;
-            double iterations_successful_sp_mean = 0;
-            double iterations_successful_sp_std_dev = 0;   //standard deviation
-            size_t curr_sp_iterations_num = 0;
+            size_t iter_success_dec_alg_max = 0;
+            size_t iter_success_dec_alg_min = CFG.DECODING_ALG_MAX_ITERATIONS;
+            double iter_success_dec_alg_mean = 0;
+            double iter_success_dec_alg_std_dev = 0;   //standard deviation
+            size_t curr_decoding_iterations_num = 0;
             for (size_t k = 0; k < trial_results.size(); k++)
             {
-                if (trial_results[k].ldpc_res.sp_res.syndromes_match)
+                if (trial_results[k].ldpc_res.decoding_res.syndromes_match)
                 {
-                    trials_successful_sp++;
-                    curr_sp_iterations_num = trial_results[k].ldpc_res.sp_res.iterations_num;
-                    if (iterations_successful_sp_max < curr_sp_iterations_num)
+                    trials_successful_decoding++;
+                    curr_decoding_iterations_num = trial_results[k].ldpc_res.decoding_res.iterations_num;
+                    if (iter_success_dec_alg_max < curr_decoding_iterations_num)
                     {
-                        iterations_successful_sp_max = curr_sp_iterations_num;
+                        iter_success_dec_alg_max = curr_decoding_iterations_num;
                     }
-                    if (iterations_successful_sp_min > curr_sp_iterations_num)
+                    if (iter_success_dec_alg_min > curr_decoding_iterations_num)
                     {
-                        iterations_successful_sp_min = curr_sp_iterations_num;
+                        iter_success_dec_alg_min = curr_decoding_iterations_num;
                     }
                     if (trial_results[k].ldpc_res.keys_match)
                     {
                         trials_successful_ldpc++;
                     }
 
-                    iterations_successful_sp_mean += static_cast<double>(curr_sp_iterations_num);
+                    iter_success_dec_alg_mean += static_cast<double>(curr_decoding_iterations_num);
                 }
             }
 
-            if (trials_successful_sp > 0)
+            if (trials_successful_decoding > 0)
             {
-                iterations_successful_sp_mean /= static_cast<double>(trials_successful_sp);
+                iter_success_dec_alg_mean /= static_cast<double>(trials_successful_decoding);
                 for (size_t k = 0; k < trial_results.size(); k++)
                 {
-                    if (trial_results[k].ldpc_res.sp_res.syndromes_match)
+                    if (trial_results[k].ldpc_res.decoding_res.syndromes_match)
                     {
-                        curr_sp_iterations_num = trial_results[k].ldpc_res.sp_res.iterations_num;
-                        iterations_successful_sp_std_dev += pow((static_cast<double>(curr_sp_iterations_num) - iterations_successful_sp_mean), 2);
+                        curr_decoding_iterations_num = trial_results[k].ldpc_res.decoding_res.iterations_num;
+                        iter_success_dec_alg_std_dev += pow((static_cast<double>(curr_decoding_iterations_num) - iter_success_dec_alg_mean), 2);
                     }
                 }
-                iterations_successful_sp_std_dev /= static_cast<double>(trials_successful_sp);
-                iterations_successful_sp_std_dev = sqrt(iterations_successful_sp_std_dev);
+                iter_success_dec_alg_std_dev /= static_cast<double>(trials_successful_decoding);
+                iter_success_dec_alg_std_dev = sqrt(iter_success_dec_alg_std_dev);
             }
 
             sim_results[curr_sim].sim_number = curr_sim;
@@ -287,13 +288,13 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             sim_results[curr_sim].num_check_nodes = matrix.check_nodes.size();
 
             sim_results[curr_sim].initial_QBER = trial_results[0].initial_QBER;
-            sim_results[curr_sim].iterations_successful_sp_max = iterations_successful_sp_max;
-            sim_results[curr_sim].iterations_successful_sp_min = (iterations_successful_sp_min == CFG.SUM_PRODUCT_MAX_ITERATIONS) ? 0. : iterations_successful_sp_min;
-            sim_results[curr_sim].iterations_successful_sp_mean = iterations_successful_sp_mean;
-            sim_results[curr_sim].iterations_successful_sp_std_dev = iterations_successful_sp_std_dev;
+            sim_results[curr_sim].iter_success_dec_alg_max = iter_success_dec_alg_max;
+            sim_results[curr_sim].iter_success_dec_alg_min = (iter_success_dec_alg_min == CFG.DECODING_ALG_MAX_ITERATIONS) ? 0. : iter_success_dec_alg_min;
+            sim_results[curr_sim].iter_success_dec_alg_mean = iter_success_dec_alg_mean;
+            sim_results[curr_sim].iter_success_dec_alg_std_dev = iter_success_dec_alg_std_dev;
 
-            sim_results[curr_sim].ratio_trials_successful_ldpc = static_cast<double>(trials_successful_ldpc) / CFG.TRIALS_NUMBER;
-            sim_results[curr_sim].ratio_trials_successful_sp = static_cast<double>(trials_successful_sp) / CFG.TRIALS_NUMBER;
+            sim_results[curr_sim].ratio_trials_success_ldpc = static_cast<double>(trials_successful_ldpc) / CFG.TRIALS_NUMBER;
+            sim_results[curr_sim].ratio_trials_success_dec_alg = static_cast<double>(trials_successful_decoding) / CFG.TRIALS_NUMBER;
             curr_sim++;
         }
     }

@@ -13,14 +13,15 @@ int main()
 {
     try
     {
-        CFG.SUM_PRODUCT_MAX_ITERATIONS = 100;
+        CFG.DECODING_ALG_MAX_ITERATIONS = 100;
 
-        CFG.ENABLE_SUM_PRODUCT_MSG_LLR_THRESHOLD = true;
-        CFG.SUM_PRODUCT_MSG_LLR_THRESHOLD = 100.;
+        CFG.USE_MIN_SUM_DECODING_ALG = false;               // Use Sum-Product
+        CFG.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD = true;
+        CFG.DECODING_ALG_MSG_LLR_THRESHOLD = 100.;
 
         CFG.TRACE_QKD_LDPC = true;
-        CFG.TRACE_SUM_PRODUCT = true;
-        CFG.TRACE_SUM_PRODUCT_LLR = true;
+        CFG.TRACE_DECODING_ALG = true;
+        CFG.TRACE_DECODING_ALG_LLR = true;
         
         H_matrix matrix = read_dense_matrix(EXAMPLE_DENSE_MATRIX_PATH);
 
