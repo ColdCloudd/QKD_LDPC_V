@@ -1,7 +1,7 @@
 #include "array_and_matrix_operations.hpp"
 
 // Convert a dense parity check matrix into an array containing information about bit nodes and associated check nodes (sparse matrix).
-std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int>> &matrix, 
+std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int8_t>> &matrix, 
                                             const std::vector<int> &bit_nodes_weight)
 {
     size_t num_bit_nodes = matrix[0].size();
@@ -24,7 +24,7 @@ std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int>> 
 }
 
 // Convert a dense parity check matrix into an array containing information about check nodes and associated bit nodes (sparse matrix).
-std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int>> &matrix, 
+std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int8_t>> &matrix, 
                                               const std::vector<int> &check_nodes_weight)
 {
     size_t num_bit_nodes = matrix[0].size();
@@ -380,21 +380,22 @@ H_matrix read_dense_matrix(const fs::path &matrix_path)
         throw std::runtime_error("File is empty or cannot be read properly: " + matrix_path.string());
     }
 
-    std::vector<std::vector<int>> dense_matrix;
+    std::vector<std::vector<int8_t>> dense_matrix;
     try
     {
         for (const auto &line : line_vec)
         {
             std::istringstream iss(line);
-            std::vector<int> numbers;
+            std::vector<int8_t> numbers;
             int number;
             while (iss >> number)
             {
+
                 if (number != 0 && number != 1)
                 {
                     throw std::runtime_error("Parity check matrix can only take values ​​0 or 1.");
                 }
-                numbers.push_back(number);
+                numbers.push_back(static_cast<int8_t>(number));
             }
             dense_matrix.push_back(numbers);
         }

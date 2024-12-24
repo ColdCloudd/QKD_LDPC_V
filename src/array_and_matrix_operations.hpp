@@ -19,14 +19,14 @@ struct H_matrix
 {
     std::vector<std::vector<int>> bit_nodes{};          // A two-dimensional array that establishes a correspondence between the positions of bit nodes and the positions of check nodes that control them in parity check matrix.
     std::vector<std::vector<int>> check_nodes{};        // A two-dimensional array that establishes a correspondence between the positions of check nodes and the positions of bit nodes that controlled by them in parity check matrix.
-    std::vector<int> bits_to_remove{};     // A set of bits that must be removed to maintain privacy.
+    std::vector<int> bits_to_remove{};                  // A set of bits that must be removed to maintain privacy.
     bool is_regular{};                                  // Matrix type.
 };
 
-std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int>> &matrix, 
+std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int8_t>> &matrix, 
                                             const std::vector<int> &bit_nodes_weight);
 
-std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int>> &matrix, 
+std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int8_t>> &matrix, 
                                               const std::vector<int> &check_nodes_weight);
 
 double get_max_llr(const std::vector<std::vector<double>> &matrix);
