@@ -79,14 +79,12 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
     std::vector<fs::path> matrix_paths = get_file_paths_in_directory(matrix_dir_path);
     fs::path matrix_path = select_matrix_file(matrix_paths);
 
-    if (CFG.USE_DENSE_MATRICES)
-    {
+    if (CFG.MATRIX_FORMAT == 0)
         matrix = read_dense_matrix(matrix_path);
-    }
-    else
-    {
+    else if (CFG.MATRIX_FORMAT == 1)
         matrix = read_sparse_alist_matrix(matrix_path);
-    }
+    else if (CFG.MATRIX_FORMAT == 2)
+        matrix = read_sparse_matrix(matrix_path);
 
     fmt::print(fg(fmt::color::green), "{}\n", ((matrix.is_regular) ? "Matrix H is regular." : "Matrix H is irregular."));
 
@@ -134,14 +132,12 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
     std::vector<sim_input> sim_inputs(matrix_paths.size());
     for (size_t i = 0; i < matrix_paths.size(); i++)
     {
-        if (CFG.USE_DENSE_MATRICES)
-        {
+        if (CFG.MATRIX_FORMAT == 0)
             sim_inputs[i].matrix = read_dense_matrix(matrix_paths[i]);
-        }
-        else
-        {
+        else if (CFG.MATRIX_FORMAT == 1)
             sim_inputs[i].matrix = read_sparse_alist_matrix(matrix_paths[i]);
-        }
+        else if (CFG.MATRIX_FORMAT == 2)
+            sim_inputs[i].matrix = read_sparse_matrix(matrix_paths[i]);
 
         sim_inputs[i].matrix_path = matrix_paths[i];
 

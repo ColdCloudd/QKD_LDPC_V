@@ -29,6 +29,8 @@ std::vector<std::vector<int>> get_bit_nodes(const std::vector<std::vector<int8_t
 std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int8_t>> &matrix, 
                                               const std::vector<int> &check_nodes_weight);
 
+std::vector<std::vector<int>> get_bit_nodes_from_check_nodes(const std::vector<std::vector<int>> &check_nodes);
+
 double get_max_llr(const std::vector<std::vector<double>> &matrix);
 
 bool arrays_equal(const std::vector<int> &array1,
@@ -46,6 +48,8 @@ void privacy_maintenance(const H_matrix &matrix,
                          std::vector<int>& array2_out);
 
 H_matrix read_sparse_alist_matrix(const fs::path &matrix_path);
+
+H_matrix read_sparse_matrix(const fs::path &matrix_path);
 
 H_matrix read_dense_matrix(const fs::path &matrix_path);
 

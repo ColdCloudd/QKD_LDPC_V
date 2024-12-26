@@ -7,7 +7,8 @@ namespace fs = std::filesystem;
 
 const fs::path CONFIG_PATH = fs::path(SOURCE_DIR) / "config.json";
 const fs::path DENSE_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "dense_matrices";
-const fs::path ALIST_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "alist_sparse_matrices";
+const fs::path SPARSE_ALIST_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "alist_sparse_matrices";
+const fs::path SPARSE_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices";
 const fs::path RESULTS_DIR_PATH = fs::path(SOURCE_DIR) / "results";
 
 config_data CFG;
@@ -17,7 +18,14 @@ int main()
     try
     {
         CFG = get_config_data(CONFIG_PATH);
-        fs::path matrix_dir_path = ((CFG.USE_DENSE_MATRICES) ? DENSE_MATRIX_DIR_PATH : ALIST_MATRIX_DIR_PATH);
+        fs::path matrix_dir_path;
+        if (CFG.MATRIX_FORMAT == 0)
+            matrix_dir_path = DENSE_MATRIX_DIR_PATH;
+        else if (CFG.MATRIX_FORMAT == 1)
+            matrix_dir_path = SPARSE_ALIST_MATRIX_DIR_PATH;
+        else if (CFG.MATRIX_FORMAT == 2)
+            matrix_dir_path = SPARSE_MATRIX_DIR_PATH;
+        
         if (CFG.INTERACTIVE_MODE)
         {
             fmt::print(fg(fmt::color::purple), "INTERACTIVE MODE\n");

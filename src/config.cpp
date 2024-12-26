@@ -55,7 +55,12 @@ config_data get_config_data(fs::path config_path)
             throw std::runtime_error("Minimum number of decoding algorithm iterations must be >= 1!");
         }
 
-        cfg.USE_DENSE_MATRICES = config["use_dense_matrices"].template get<bool>();
+        cfg.MATRIX_FORMAT = config["matrix_format"].template get<size_t>();
+        if (cfg.MATRIX_FORMAT > 2)
+        {
+            throw std::runtime_error("Only three options are available: 0, 1, 2!");
+        }
+
         cfg.TRACE_QKD_LDPC = config["trace_qkd_ldpc"].template get<bool>();
         cfg.TRACE_DECODING_ALG = config["trace_decoding_algorithm"].template get<bool>();
         cfg.TRACE_DECODING_ALG_LLR = config["trace_decoding_algorithm_llr"].template get<bool>();

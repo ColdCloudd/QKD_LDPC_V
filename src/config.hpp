@@ -46,7 +46,16 @@ struct config_data
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
     // Use dense matrices (folder dense_matrices) instead of sparse matrices (folder alist_sparse_matrices).
-    bool USE_DENSE_MATRICES{};
+    // Three options:
+    // 0. Dense matrices (folder dense_matrices).
+    // 1. Sparse matrices in .alist format (folder alist_sparse_matrices).
+    // 2. Sparse matrices in format specified below (folder sparse_matrices).
+    // The first line contains the block length, N. The second line defines the number of parity-checks, M.
+    // The third line defines the number of columns of the compressed parity-check matrix. 
+    // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
+    // indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
+    // the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html
+    size_t MATRIX_FORMAT{};
 
     // Output intermediate results of LDPC operation to the console.
     bool TRACE_QKD_LDPC{};

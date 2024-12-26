@@ -46,6 +46,37 @@ std::vector<std::vector<int>> get_check_nodes(const std::vector<std::vector<int8
     return check_nodes;
 }
 
+std::vector<std::vector<int>> get_bit_nodes_from_check_nodes(const std::vector<std::vector<int>> &check_nodes)
+{
+    size_t num_bit_nodes = 0;     // bit nodes number
+    size_t row_max = 0;
+    for (const auto& row : check_nodes) 
+    {
+        row_max = *std::max_element(row.begin(), row.end());
+        if (row_max > num_bit_nodes) 
+        {
+            num_bit_nodes = row_max;
+        }
+    }
+    ++num_bit_nodes;
+
+    std::vector<std::vector<int>> bit_nodes(num_bit_nodes);
+    for (size_t i = 0; i < num_bit_nodes; ++i)
+    {
+        for (size_t j = 0; j < check_nodes.size(); ++j)
+        {
+            for (size_t k = 0; k < check_nodes[j].size(); ++k)
+            {
+                if (check_nodes[j][k] == i)
+                {
+                    bit_nodes[i].push_back(static_cast<int>(j));
+                }
+            }
+        }
+    }
+    return bit_nodes;
+}
+
 // Finding the maximum modulo LLR value in a given matrix.
 double get_max_llr(const std::vector<std::vector<double>> &matrix)
 {
@@ -173,7 +204,7 @@ void privacy_maintenance(const H_matrix &matrix,
     }
 }
 
-// Function for reading a sparse matrix from a file in alist format (https://rptu.de/channel-codes/matrix-file-formats).
+// Read sparse matrix from file in alist format (https://rptu.de/channel-codes/matrix-file-formats).
 H_matrix read_sparse_alist_matrix(const fs::path &matrix_path)
 {
     std::vector<std::string> line_vec;
@@ -350,6 +381,157 @@ H_matrix read_sparse_alist_matrix(const fs::path &matrix_path)
     }
 
     matrix_out.is_regular = is_regular;
+    if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+    {
+        get_bits_positions_to_remove(matrix_out);
+    }
+    return matrix_out;
+}
+
+// Read sparse matrix from file in format:
+// The first line contains the block length, N. The second line defines the number of parity-checks, M.
+// The third line defines the number of columns of the compressed parity-check matrix. 
+// The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
+// indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
+// the column is filled up with 0's.
+H_matrix read_sparse_matrix(const fs::path &matrix_path)
+{
+    std::vector<std::string> line_vec;
+    std::ifstream file(matrix_path);
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Failed to open file: " + matrix_path.string());
+    }
+    std::string line;
+
+    while (getline(file, line))
+    {
+        line_vec.push_back(line);
+    }
+    file.close();
+
+    if (line_vec.empty())
+    {
+        throw std::runtime_error("File is empty or cannot be read properly: " + matrix_path.string());
+    }
+
+    std::vector<std::vector<int>> vec_int;
+    try
+    {
+        for (const auto &line : line_vec)
+        {
+            std::istringstream iss(line);
+            std::vector<int> numbers;
+            int number;
+            while (iss >> number)
+            {
+                numbers.push_back(number);
+            }
+            vec_int.push_back(numbers);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        fmt::print(stderr, fg(fmt::color::red), "An error occurred while parsing file: {}\n", matrix_path.string());
+        throw;
+    }
+
+    if (vec_int.size() < 3)
+    {
+        throw std::runtime_error("Insufficient data in the file: " + matrix_path.string());
+    }
+
+    if (vec_int[0].size() != 1 || vec_int[1].size() != 1 || vec_int[2].size() != 1)
+    {
+        throw std::runtime_error("File format does not match the sparse format: " + matrix_path.string());
+    }
+
+    size_t col_num = vec_int[0][0];             // n
+    size_t row_num = vec_int[1][0];             // m
+    size_t max_row_weight = vec_int[2][0];      // d^(c)_max
+
+    size_t curr_line = 3;
+
+    if (vec_int.size() < curr_line + row_num)
+    {
+        throw std::runtime_error("Insufficient data in the file: " + matrix_path.string());
+    }
+
+    bool is_regular = true;
+    bool max_weights_matched = false;
+    size_t curr_row_weight = 0;
+
+    H_matrix matrix_out{};
+    // Filling the matrix of check nodes
+    int bit_node_index{};
+    try
+    {
+        matrix_out.check_nodes.resize(row_num);
+        for (size_t i = 0; i < row_num; ++i)
+        {
+            curr_row_weight = vec_int[curr_line + i].size();
+            for (size_t j = 0; j < curr_row_weight; ++j)
+            {
+                bit_node_index = vec_int[curr_line + i][j];
+                if (bit_node_index < 0)
+                {
+                    throw std::runtime_error("Bit node index cannot be less than zero: " + std::to_string(bit_node_index) 
+                    + ", row '"+ std::to_string(curr_line + i) + "'.");
+                }
+                if (curr_row_weight > max_row_weight)
+                {
+                    throw std::runtime_error("Actual weight '" + std::to_string(curr_row_weight) + "' of row '"
+                    + std::to_string(curr_line + i) + "' exceeded the maximum specified weight '"
+                    + std::to_string(max_row_weight) +"'."); 
+                }
+                if (bit_node_index != 0)
+                {
+                    matrix_out.check_nodes[i].push_back(bit_node_index - 1);
+                }
+                if (curr_row_weight == max_row_weight)
+                {
+                    max_weights_matched = true;
+                }
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        fmt::print(stderr, fg(fmt::color::red), "An error occurred while creating 'check_nodes' matrix from file: {}\n", matrix_path.string());
+        throw;
+    }
+
+    if (!max_weights_matched)
+    {
+        throw std::runtime_error("None of the row weights matched the specified maximum weight '" 
+        + std::to_string(max_row_weight) + "'. File: " + matrix_path.string());
+    }
+    
+    for (size_t i = 0; i < matrix_out.check_nodes.size(); ++i)
+    {
+        if (matrix_out.check_nodes[0].size() != matrix_out.check_nodes[i].size())
+        {
+            is_regular = false;
+            break;
+        }   
+    }
+
+    matrix_out.is_regular = is_regular;
+    try
+    {
+        matrix_out.bit_nodes = get_bit_nodes_from_check_nodes(matrix_out.check_nodes);
+        if (matrix_out.bit_nodes.size() != col_num)
+        {
+            throw std::runtime_error("The actual number of bit nodes '"+ std::to_string(matrix_out.bit_nodes.size())
+             + "' did not match the specified number '" + std::to_string(col_num) + "' of bit nodes.");
+        }
+    }
+    catch(const std::exception& e)
+    {
+        fmt::print(stderr, fg(fmt::color::red), "An error occurred while creating 'bit_nodes' matrix from file: {}\n", matrix_path.string());
+        throw;
+    }
     if (CFG.ENABLE_PRIVACY_MAINTENANCE)
     {
         get_bits_positions_to_remove(matrix_out);
