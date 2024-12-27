@@ -7,8 +7,10 @@ namespace fs = std::filesystem;
 
 const fs::path CONFIG_PATH = fs::path(SOURCE_DIR) / "config.json";
 const fs::path DENSE_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "dense_matrices";
-const fs::path SPARSE_ALIST_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "alist_sparse_matrices";
-const fs::path SPARSE_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices";
+const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_alist";
+const fs::path SPARSE_MATRIX_1_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_1";
+const fs::path SPARSE_MATRIX_2_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_2";
+
 const fs::path RESULTS_DIR_PATH = fs::path(SOURCE_DIR) / "results";
 
 config_data CFG;
@@ -22,9 +24,11 @@ int main()
         if (CFG.MATRIX_FORMAT == 0)
             matrix_dir_path = DENSE_MATRIX_DIR_PATH;
         else if (CFG.MATRIX_FORMAT == 1)
-            matrix_dir_path = SPARSE_ALIST_MATRIX_DIR_PATH;
+            matrix_dir_path = SPARSE_MATRIX_ALIST_DIR_PATH;
         else if (CFG.MATRIX_FORMAT == 2)
-            matrix_dir_path = SPARSE_MATRIX_DIR_PATH;
+            matrix_dir_path = SPARSE_MATRIX_1_DIR_PATH;
+        else if (CFG.MATRIX_FORMAT == 3)
+            matrix_dir_path = SPARSE_MATRIX_2_DIR_PATH;
         
         if (CFG.INTERACTIVE_MODE)
         {

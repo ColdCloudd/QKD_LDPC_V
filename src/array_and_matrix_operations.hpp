@@ -47,9 +47,11 @@ void privacy_maintenance(const H_matrix &matrix,
                          std::vector<int>& array1_out,
                          std::vector<int>& array2_out);
 
-H_matrix read_sparse_alist_matrix(const fs::path &matrix_path);
+H_matrix read_sparse_matrix_alist(const fs::path &matrix_path);
 
-H_matrix read_sparse_matrix(const fs::path &matrix_path);
+H_matrix read_sparse_matrix_1(const fs::path &matrix_path);
+
+H_matrix read_sparse_matrix_2(const fs::path &matrix_path);
 
 H_matrix read_dense_matrix(const fs::path &matrix_path);
 

@@ -56,9 +56,9 @@ config_data get_config_data(fs::path config_path)
         }
 
         cfg.MATRIX_FORMAT = config["matrix_format"].template get<size_t>();
-        if (cfg.MATRIX_FORMAT > 2)
+        if (cfg.MATRIX_FORMAT > 3)
         {
-            throw std::runtime_error("Only three options are available: 0, 1, 2!");
+            throw std::runtime_error("Only four options are available: \n0 - dense;\n1 - sparse alist;\n2 - sparse_1;\n3 - sparse_2.");
         }
 
         cfg.TRACE_QKD_LDPC = config["trace_qkd_ldpc"].template get<bool>();
