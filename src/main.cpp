@@ -38,6 +38,9 @@ int main()
         else
         {
             fmt::print(fg(fmt::color::purple), "BATCH MODE\n");
+            if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
+                fmt::print(fg(fmt::color::purple), "WARNING: Throughput measurement is enabled. It is recommended to perform experiments in single-threaded mode.\n");
+            
             std::vector<fs::path> matrix_paths = get_file_paths_in_directory(matrix_dir_path);
             if (matrix_paths.empty())
             {

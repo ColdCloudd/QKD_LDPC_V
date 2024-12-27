@@ -12,7 +12,8 @@ void write_file(const std::vector<sim_result> &data,
         }
         std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",decoding_alg=" + 
                                ((CFG.USE_MIN_SUM_DECODING_ALG)?"MSA":"SPA") + ",max_decoding_alg_iters=" +
-                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
+                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",privacy_maintenance="+ 
+                               ((CFG.ENABLE_PRIVACY_MAINTENANCE)?"on":"off") + ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
         std::string extension = ".csv";
         fs::path result_file_path = directory / (base_filename + extension);
 
@@ -26,7 +27,7 @@ void write_file(const std::vector<sim_result> &data,
         std::fstream fout;
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
         fout << "№;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_DEC_ALG_MEAN;ITERATIONS_SUCCESSFUL_DEC_ALG_STD_DEV;ITERATIONS_SUCCESSFUL_DEC_ALG_MIN;ITERATIONS_SUCCESSFUL_DEC_ALG_MAX;" << 
-        "RATIO_TRIALS_SUCCESSFUL_DEC_ALG;RATIO_TRIALS_SUCCESSFUL_LDPC;FER\n";
+        "RATIO_TRIALS_SUCCESSFUL_DEC_ALG;RATIO_TRIALS_SUCCESSFUL_LDPC;FER"<< ((CFG.ENABLE_THROUGHPUT_MEASUREMENT) ? ";THROUGHPUT_MEAN;THROUGHPUT_STD_DEV;THROUGHPUT_MIN;THROUGHPUT_MAX" : "") <<"\n";
         for (size_t i = 0; i < data.size(); i++)
         {
             fout << data[i].sim_number << ";" << data[i].matrix_filename << ";" << (data[i].is_regular ? "regular" : "irregular") << ";" 
@@ -34,7 +35,10 @@ void write_file(const std::vector<sim_result> &data,
                  << data[i].num_bit_nodes << ";" << data[i].initial_QBER << ";" << data[i].iter_success_dec_alg_mean << ";" 
                  << data[i].iter_success_dec_alg_std_dev << ";" << data[i].iter_success_dec_alg_min << ";" 
                  << data[i].iter_success_dec_alg_max << ";" << data[i].ratio_trials_success_dec_alg << ";" 
-                 << data[i].ratio_trials_success_ldpc << ";" << 1. - data[i].ratio_trials_success_ldpc << "\n";
+                 << data[i].ratio_trials_success_ldpc << ";" << 1. - data[i].ratio_trials_success_ldpc 
+                 << ((CFG.ENABLE_THROUGHPUT_MEASUREMENT) ? (";" + std::to_string(data[i].throughput_mean) + ";"
+                 + std::to_string(data[i].throughput_std_dev) + ";" + std::to_string(data[i].throughput_min) + ";"
+                 + std::to_string(data[i].throughput_max)):"") << "\n";
         }
         fout.close();
     }
@@ -169,7 +173,17 @@ trial_result run_trial(const H_matrix &matrix,
         throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
     }
 
-    result.ldpc_res = QKD_LDPC(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
+    if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        result.ldpc_res = QKD_LDPC(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
+        auto end = std::chrono::high_resolution_clock::now();
+        result.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    }
+    else
+    {
+        result.ldpc_res = QKD_LDPC(alice_bit_array, bob_bit_array, result.initial_QBER, matrix);
+    }
 
     return result;
 }
@@ -208,18 +222,18 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
     XoshiroCpp::Xoshiro256PlusPlus prng(CFG.SIMULATION_SEED);
     std::uniform_int_distribution<size_t> distribution(0, std::numeric_limits<size_t>::max());
     std::vector<size_t> seeds(CFG.TRIALS_NUMBER);
-    for (size_t i = 0; i < seeds.size(); i++)
+    for (size_t i = 0; i < seeds.size(); ++i)
     {
         seeds[i] = distribution(prng);
     }
 
     BS::thread_pool pool(CFG.THREADS_NUMBER);
-    for (size_t i = 0; i < sim_in.size(); i++)
+    for (size_t i = 0; i < sim_in.size(); ++i)
     {
         const H_matrix &matrix = sim_in[i].matrix;
         double code_rate = 1. - (static_cast<double>(matrix.check_nodes.size()) / matrix.bit_nodes.size());
         std::string matrix_filename = sim_in[i].matrix_path.filename().string();
-        for (size_t j = 0; j < sim_in[i].QBER.size(); j++)
+        for (size_t j = 0; j < sim_in[i].QBER.size(); ++j)
         {
             iteration += CFG.TRIALS_NUMBER;
             bar.set_option(option::PostfixText{
@@ -238,11 +252,11 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             size_t trials_successful_decoding = 0;
             size_t trials_successful_ldpc = 0;
             size_t iter_success_dec_alg_max = 0;
-            size_t iter_success_dec_alg_min = CFG.DECODING_ALG_MAX_ITERATIONS;
+            size_t iter_success_dec_alg_min = std::numeric_limits<size_t>::max();
             double iter_success_dec_alg_mean = 0;
             double iter_success_dec_alg_std_dev = 0;   //standard deviation
             size_t curr_decoding_iterations_num = 0;
-            for (size_t k = 0; k < trial_results.size(); k++)
+            for (size_t k = 0; k < trial_results.size(); ++k)
             {
                 if (trial_results[k].ldpc_res.decoding_res.syndromes_match)
                 {
@@ -268,7 +282,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             if (trials_successful_decoding > 0)
             {
                 iter_success_dec_alg_mean /= static_cast<double>(trials_successful_decoding);
-                for (size_t k = 0; k < trial_results.size(); k++)
+                for (size_t k = 0; k < trial_results.size(); ++k)
                 {
                     if (trial_results[k].ldpc_res.decoding_res.syndromes_match)
                     {
@@ -280,6 +294,45 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
                 iter_success_dec_alg_std_dev = sqrt(iter_success_dec_alg_std_dev);
             }
 
+            if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
+            {
+                double out_key_length = static_cast<double>(matrix.bit_nodes.size() - matrix.check_nodes.size());
+                const double MICROSECONDS_IN_SECOND = 1000000.;
+                double curr_throughput{};
+                double throughput_max = 0;
+                double throughput_min = std::numeric_limits<double>::max();
+                double throughput_mean = 0;
+                double throughput_std_dev = 0;
+
+                for (size_t k = 0; k < trial_results.size(); ++k)
+                {
+                    curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());  // bits/s
+                    throughput_mean += curr_throughput;
+                    if (curr_throughput > throughput_max)
+                    {
+                        throughput_max = curr_throughput;
+                    }
+                    if (curr_throughput < throughput_min)
+                    {
+                        throughput_min = curr_throughput;
+                    }
+                }
+                throughput_mean /= static_cast<double>(CFG.TRIALS_NUMBER);
+                
+                for (size_t k = 0; k < trial_results.size(); ++k)
+                {
+                    curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());
+                    throughput_std_dev += pow((curr_throughput - throughput_mean), 2);
+                }
+                throughput_std_dev /= static_cast<double>(CFG.TRIALS_NUMBER);
+                throughput_std_dev = sqrt(throughput_std_dev);
+
+                sim_results[curr_sim].throughput_max = static_cast<size_t>(throughput_max);
+                sim_results[curr_sim].throughput_min = static_cast<size_t>(throughput_min);
+                sim_results[curr_sim].throughput_mean = static_cast<size_t>(throughput_mean);
+                sim_results[curr_sim].throughput_std_dev = static_cast<size_t>(throughput_std_dev);
+            }
+            
             sim_results[curr_sim].sim_number = curr_sim;
 
             sim_results[curr_sim].matrix_filename = matrix_filename;

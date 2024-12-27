@@ -38,6 +38,10 @@ struct config_data
     // Enables privacy maintenance after protocol execution.
     bool ENABLE_PRIVACY_MAINTENANCE{}; 
 
+    // Measurement of protocol throughput (T). As the ratio of the number of bits remaining after protocol execution to the protocol run time (bits/s). 
+    // It is recommended to perform experiments in single-threaded mode.
+    bool ENABLE_THROUGHPUT_MEASUREMENT{};
+
     // Use MSA (Min-Sum Algorithm) decoding algorithm instead of SPA (Sum-Product Algorithm).
     bool USE_MIN_SUM_DECODING_ALG{};
 

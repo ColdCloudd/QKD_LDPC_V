@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <chrono>
+#include <limits>
 
 #include <fmt/core.h>
 #include <fmt/color.h>
@@ -24,6 +26,7 @@ struct trial_result
 {
     LDPC_result ldpc_res{};
     double initial_QBER{};
+    std::chrono::microseconds runtime{};
 };
 
 struct sim_result
@@ -33,13 +36,17 @@ struct sim_result
     bool is_regular{};                          // Matrix type.
     size_t num_bit_nodes{};                     // Number of bit nodes, which is defined as the number of columns in the parity check matrix.
     size_t num_check_nodes{};                   // Number of check nodes, which is defined as the number of rows in the parity check matrix.
-    double initial_QBER{};                       // An accurate QBER that corresponds to the number of errors in the key.
-    size_t iter_success_dec_alg_max{};      // The maximum number of iterations of the decoding algorithm (SPA or MSA) in which Alice's syndrome matched Bob's syndrome (i.e. successful).
-    size_t iter_success_dec_alg_min{};      // The minimum number of iterations of the decoding algorithm.
-    double iter_success_dec_alg_mean{};     // The mean number of iterations of the decoding algorithm. 
-    double iter_success_dec_alg_std_dev{};  // The standard deviation of iterations of the decoding algorithm. 
-    double ratio_trials_success_dec_alg{};        // Success rate of the decoding algorithm. Success when Bob's syndrome matches Alice's.
-    double ratio_trials_success_ldpc{};      // Success rate of the QKD LDPC error reconciliation. Success when Bob and Alice's keys match.
+    double initial_QBER{};                      // An accurate QBER that corresponds to the number of errors in the key.
+    size_t iter_success_dec_alg_max{};          // The maximum number of iterations of the decoding algorithm (SPA or MSA) in which Alice's syndrome matched Bob's syndrome (i.e. successful).
+    size_t iter_success_dec_alg_min{};          // The minimum number of iterations of the decoding algorithm.
+    double iter_success_dec_alg_mean{};         // The mean number of iterations of the decoding algorithm. 
+    double iter_success_dec_alg_std_dev{};      // The standard deviation of iterations of the decoding algorithm. 
+    double ratio_trials_success_dec_alg{};      // Success rate of the decoding algorithm. Success when Bob's syndrome matches Alice's.
+    double ratio_trials_success_ldpc{};         // Success rate of the QKD LDPC error reconciliation. Success when Bob and Alice's keys match.
+    size_t throughput_max{};                    // Throughput is measured as the ratio of the number of bits remaining after protocol execution to the protocol run time (bits/s).
+    size_t throughput_min{};
+    size_t throughput_mean{};
+    size_t throughput_std_dev{};
 };
 
 void write_file(const std::vector<sim_result> &data,

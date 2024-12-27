@@ -1,13 +1,14 @@
 {
-    "threads_number": 16,
-    "trials_number": 10000,
+    "threads_number": 1,
+    "trials_number": 100,
     "use_config_simulation_seed": true,
     "simulation_seed": 999,
     "interactive_mode": false,
-    "enable_privacy_maintenance": false,
+    "enable_privacy_maintenance": true,
+    "enable_throughput_measurement": true,
     "use_min_sum_decoding_algorithm": false,
     "decoding_algorithm_max_iterations": 100,
-    "matrix_format": 3,
+    "matrix_format": 1,
     "trace_qkd_ldpc": false,
     "trace_decoding_algorithm": false,
     "trace_decoding_algorithm_llr": false,
@@ -17,15 +18,15 @@
     [
         {
             "code_rate": 0.36, "QBER_begin": 0.03,
-            "QBER_end": 0.125, "QBER_step": 0.0005
+            "QBER_end": 0.125, "QBER_step": 0.005
         },
         {
             "code_rate": 0.58, "QBER_begin": 0.04,
-            "QBER_end": 0.1, "QBER_step": 0.0005
+            "QBER_end": 0.1, "QBER_step": 0.005
         },
         {
-            "code_rate": 0.95, "QBER_begin": 0.005,
-            "QBER_end": 0.10, "QBER_step": 0.005
+            "code_rate": 0.95, "QBER_begin": 0.001,
+            "QBER_end": 0.006, "QBER_step": 0.001
         }
     ]
 }
