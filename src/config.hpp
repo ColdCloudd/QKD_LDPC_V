@@ -42,6 +42,12 @@ struct config_data
     // It is recommended to perform experiments in single-threaded mode.
     bool ENABLE_THROUGHPUT_MEASUREMENT{};
 
+    // Take RTT into account when calculating protocol throughput.
+    bool CONSIDER_RTT{};
+
+    // RTT (Round-Trip Time) in milliseconds.
+    size_t RTT{};
+
     // Use MSA (Min-Sum Algorithm) decoding algorithm instead of SPA (Sum-Product Algorithm).
     bool USE_MIN_SUM_DECODING_ALG{};
 

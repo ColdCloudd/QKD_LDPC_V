@@ -12,8 +12,11 @@ void write_file(const std::vector<sim_result> &data,
         }
         std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",decoding_alg=" + 
                                ((CFG.USE_MIN_SUM_DECODING_ALG)?"MSA":"SPA") + ",max_decoding_alg_iters=" +
-                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",privacy_maintenance="+ 
-                               ((CFG.ENABLE_PRIVACY_MAINTENANCE)?"on":"off") + ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
+                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",privacy_maintenance=" + 
+                               ((CFG.ENABLE_PRIVACY_MAINTENANCE)?"on":"off") + 
+                               ((CFG.ENABLE_THROUGHPUT_MEASUREMENT && CFG.CONSIDER_RTT)?(",RTT=" + std::to_string(CFG.RTT)):"") + 
+                               ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
+
         std::string extension = ".csv";
         fs::path result_file_path = directory / (base_filename + extension);
 
@@ -298,6 +301,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             {
                 double out_key_length = static_cast<double>(matrix.bit_nodes.size() - matrix.check_nodes.size());
                 const double MICROSECONDS_IN_SECOND = 1000000.;
+                const double MICROSECONDS_IN_MILLISECOND = 1000.;
                 double curr_throughput{};
                 double throughput_max = 0;
                 double throughput_min = std::numeric_limits<double>::max();
@@ -306,7 +310,16 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
 
                 for (size_t k = 0; k < trial_results.size(); ++k)
                 {
-                    curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());  // bits/s
+                    if (CFG.CONSIDER_RTT)
+                    {
+                        curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / 
+                        (static_cast<double>(trial_results[k].runtime.count()) + static_cast<double>(CFG.RTT) * MICROSECONDS_IN_MILLISECOND);  // bits/s
+                    }
+                    else
+                    {
+                        curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());  // bits/s
+                    }
+                    
                     throughput_mean += curr_throughput;
                     if (curr_throughput > throughput_max)
                     {
@@ -321,7 +334,15 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
                 
                 for (size_t k = 0; k < trial_results.size(); ++k)
                 {
-                    curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());
+                    if (CFG.CONSIDER_RTT)
+                    {
+                        curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / 
+                        (static_cast<double>(trial_results[k].runtime.count()) + static_cast<double>(CFG.RTT) * MICROSECONDS_IN_MILLISECOND);  // bits/s
+                    }
+                    else
+                    {
+                        curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[k].runtime.count());  // bits/s
+                    }
                     throughput_std_dev += pow((curr_throughput - throughput_mean), 2);
                 }
                 throughput_std_dev /= static_cast<double>(CFG.TRIALS_NUMBER);

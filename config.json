@@ -6,6 +6,8 @@
     "interactive_mode": false,
     "enable_privacy_maintenance": true,
     "enable_throughput_measurement": true,
+    "consider_RTT": false,
+    "RTT": 20, 
     "use_min_sum_decoding_algorithm": false,
     "decoding_algorithm_max_iterations": 100,
     "matrix_format": 1,
