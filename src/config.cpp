@@ -51,14 +51,68 @@ config_data get_config_data(fs::path config_path)
         if (cfg.ENABLE_THROUGHPUT_MEASUREMENT)
         {
             fmt::print(fg(fmt::color::purple), "WARNING: Throughput measurement is enabled. It is recommended to perform experiments in single-threaded mode.\n");
-
-            cfg.CONSIDER_RTT = config["consider_RTT"].template get<bool>();
+            
+            const auto &tm_params = config["throughput_measurement_parameters"];
+            cfg.CONSIDER_RTT = tm_params["consider_RTT"].template get<bool>();
             if (cfg.CONSIDER_RTT)
-                cfg.RTT = config["RTT"].template get<size_t>();
+                cfg.RTT = tm_params["RTT"].template get<size_t>();
         }
                 
-        cfg.USE_MIN_SUM_DECODING_ALG = config["use_min_sum_decoding_algorithm"].template get<bool>();
-
+        cfg.USE_MIN_SUM_NORMALIZED_ALG = config["use_min_sum_normalized_algorithm"].template get<bool>();
+        if (cfg.USE_MIN_SUM_NORMALIZED_ALG)
+        {
+            const auto &msn_params = config["min_sum_normalized_parameters"];
+            cfg.USE_ALPHA_RANGE = msn_params["use_alpha_range"].template get<bool>();
+            if (cfg.USE_ALPHA_RANGE)
+            {
+                const auto &a_range = msn_params["alpha_range"];
+                cfg.ALPHA_RANGE = {a_range["begin"].template get<double>(), a_range["end"].template get<double>(), a_range["step"].template get<double>()};
+                if (cfg.ALPHA_RANGE.begin <= 0. || cfg.ALPHA_RANGE.end <= 0. || cfg.ALPHA_RANGE.step <= 0.)
+                {
+                    throw std::runtime_error("Alpha range begin, end, step must be > 0!");
+                }
+                if (cfg.ALPHA_RANGE.begin > cfg.ALPHA_RANGE.end)
+                {
+                    throw std::runtime_error("Alpha range begin cannot be larger than end!");
+                }
+                if (cfg.ALPHA_RANGE.begin != cfg.ALPHA_RANGE.end)
+                {
+                    if (cfg.ALPHA_RANGE.step - EPSILON > cfg.ALPHA_RANGE.end - cfg.ALPHA_RANGE.begin)
+                    {
+                        throw std::runtime_error("Alpha range step is too large!");
+                    }
+                }
+            }
+            else
+            {
+                const auto &r_alpha_maps = msn_params["code_rate_alpha_maps"];
+                for (const auto &m : r_alpha_maps)
+                {
+                    cfg.R_ALPHA_MAPS.push_back({m["code_rate"].template get<double>(), m["alpha"].template get<double>()});
+                }
+                if (cfg.R_ALPHA_MAPS.empty())
+                {
+                    throw std::runtime_error("Array with code rate(R) and alpha maps is empty!");
+                }
+                for (size_t i = 0; i < cfg.R_ALPHA_MAPS.size(); i++)
+                {
+                    if (cfg.R_ALPHA_MAPS[i].code_rate <= 0. || cfg.R_ALPHA_MAPS[i].code_rate >= 1.)
+                    {
+                        throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
+                    }
+                    if (cfg.R_ALPHA_MAPS[i].alpha <= 0.)
+                    {
+                        throw std::runtime_error("Alpha must be > 0!");
+                    }
+                }
+                std::sort(cfg.R_ALPHA_MAPS.begin(), cfg.R_ALPHA_MAPS.end(),
+                  [](R_alpha_map &a, R_alpha_map &b)
+                  {
+                        return (a.code_rate < b.code_rate);
+                  });
+            }
+        }
+        
         cfg.DECODING_ALG_MAX_ITERATIONS = config["decoding_algorithm_max_iterations"].template get<size_t>();
         if (cfg.DECODING_ALG_MAX_ITERATIONS < 1)
         {
@@ -85,39 +139,41 @@ config_data get_config_data(fs::path config_path)
             }
         }
 
-        const auto &params = config["code_rate_QBER_parameters"];
-        for (const auto &p : params)
+        const auto &r_qber_maps = config["code_rate_QBER_maps"];
+        for (const auto &m : r_qber_maps)
         {
-            cfg.R_QBER_PARAMETERS.push_back({p["code_rate"].template get<double>(), p["QBER_begin"].template get<double>(),
-                                             p["QBER_end"].template get<double>(), p["QBER_step"].template get<double>()});
+            cfg.R_QBER_MAPS.push_back({m["code_rate"].template get<double>(), m["QBER_begin"].template get<double>(),
+                                       m["QBER_end"].template get<double>(), m["QBER_step"].template get<double>()});
         }
 
-        if (cfg.R_QBER_PARAMETERS.empty())
+        if (cfg.R_QBER_MAPS.empty())
         {
-            throw std::runtime_error("Array with code rate and QBER parameters is empty!");
+            throw std::runtime_error("Array with code rate(R) and QBER maps is empty!");
         }
-        for (size_t i = 0; i < cfg.R_QBER_PARAMETERS.size(); i++)
+        for (size_t i = 0; i < cfg.R_QBER_MAPS.size(); i++)
         {
-            if (cfg.R_QBER_PARAMETERS[i].code_rate <= 0. || cfg.R_QBER_PARAMETERS[i].code_rate >= 1.)
+            if (cfg.R_QBER_MAPS[i].code_rate <= 0. || cfg.R_QBER_MAPS[i].code_rate >= 1.)
             {
                 throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
             }
-            if (cfg.R_QBER_PARAMETERS[i].QBER_begin <= 0. || cfg.R_QBER_PARAMETERS[i].QBER_begin >= 1. || cfg.R_QBER_PARAMETERS[i].QBER_end <= 0. || cfg.R_QBER_PARAMETERS[i].QBER_end >= 1. || cfg.R_QBER_PARAMETERS[i].QBER_begin >= cfg.R_QBER_PARAMETERS[i].QBER_end)
+            if (cfg.R_QBER_MAPS[i].QBER_begin <= 0. || cfg.R_QBER_MAPS[i].QBER_begin >= 1. || cfg.R_QBER_MAPS[i].QBER_end <= 0. || cfg.R_QBER_MAPS[i].QBER_end >= 1. || cfg.R_QBER_MAPS[i].QBER_begin > cfg.R_QBER_MAPS[i].QBER_end)
             {
-                throw std::runtime_error("Invalid QBER begin or end parameters. QBER must be: 0 < QBER < 1, and begin must be less than end.");
+                throw std::runtime_error("Invalid QBER begin or end parameters. QBER must be: 0 < QBER < 1, and begin cannot be larger than end!");
             }
-            if (cfg.R_QBER_PARAMETERS[i].QBER_step <= 0.)
+            if (cfg.R_QBER_MAPS[i].QBER_step <= 0.)
             {
                 throw std::runtime_error("QBER step must be > 0!");
             }
-            const double epsilon = 1e-6;
-            if (cfg.R_QBER_PARAMETERS[i].QBER_step - epsilon > cfg.R_QBER_PARAMETERS[i].QBER_end - cfg.R_QBER_PARAMETERS[i].QBER_begin)
+            if (cfg.R_QBER_MAPS[i].QBER_begin != cfg.R_QBER_MAPS[i].QBER_end)
             {
-                throw std::runtime_error("QBER step is too large.");
+                if (cfg.R_QBER_MAPS[i].QBER_step - EPSILON > cfg.R_QBER_MAPS[i].QBER_end - cfg.R_QBER_MAPS[i].QBER_begin)
+                {
+                    throw std::runtime_error("QBER step is too large.");
+                }
             }
         }
-        std::sort(cfg.R_QBER_PARAMETERS.begin(), cfg.R_QBER_PARAMETERS.end(),
-                  [](R_QBER_params &a, R_QBER_params &b)
+        std::sort(cfg.R_QBER_MAPS.begin(), cfg.R_QBER_MAPS.end(),
+                  [](R_QBER_map &a, R_QBER_map &b)
                   {
                       return (a.code_rate < b.code_rate);
                   });

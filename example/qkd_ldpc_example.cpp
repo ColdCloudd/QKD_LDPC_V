@@ -15,7 +15,7 @@ int main()
     {
         CFG.DECODING_ALG_MAX_ITERATIONS = 100;
 
-        CFG.USE_MIN_SUM_DECODING_ALG = false;               // Use Sum-Product
+        CFG.USE_MIN_SUM_NORMALIZED_ALG = false;               // Use Sum-Product
         CFG.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD = true;
         CFG.DECODING_ALG_MSG_LLR_THRESHOLD = 100.;
 
@@ -25,15 +25,12 @@ int main()
         
         H_matrix matrix = read_dense_matrix(EXAMPLE_DENSE_MATRIX_PATH);
 
-        size_t num_check_nodes = matrix.check_nodes.size();
-        size_t num_bit_nodes = matrix.bit_nodes.size();
-
         // Page 33, example 2.5: https://www.researchgate.net/publication/228977165_Introducing_Low-Density_Parity-Check_Codes
         std::vector<int> alice_bit_array{0, 0, 1, 0, 1, 1};
         std::vector<int> bob_bit_array{1, 0, 1, 0, 1, 1};
 
         double QBER = 0.2;
-        QKD_LDPC(alice_bit_array, bob_bit_array, QBER, matrix);
+        QKD_LDPC(matrix, alice_bit_array, bob_bit_array, QBER);
     }
     catch (const std::exception &e)
     {

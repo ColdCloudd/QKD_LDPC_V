@@ -1,11 +1,11 @@
 #include "qkd_ldpc_algorithm.hpp"
 
 decoding_result sum_product_decoding(const std::vector<double> &bit_array_llr,
-                               const H_matrix &matrix,
-                               const std::vector<int> &syndrome,          
-                               const size_t &max_num_iterations, 
-                               const double &msg_threshold, 
-                               std::vector<int> &bit_array_out)
+                                     const H_matrix &matrix,
+                                     const std::vector<int> &syndrome,          
+                                     const size_t &max_num_iterations, 
+                                     const double &msg_threshold, 
+                                     std::vector<int> &bit_array_out)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -199,12 +199,13 @@ double get_min_abs_except(const std::vector<double>& array, const size_t &k)
     return min_abs;
 }
 
-decoding_result min_sum_decoding(const std::vector<double> &bit_array_llr,
-                           const H_matrix &matrix, 
-                           const std::vector<int> &syndrome,              
-                           const size_t &max_num_iterations,   
-                           const double &msg_threshold,      
-                           std::vector<int> &bit_array_out)
+decoding_result min_sum_normalized_decoding(const std::vector<double> &bit_array_llr,
+                                            const H_matrix &matrix, 
+                                            const std::vector<int> &syndrome,              
+                                            const size_t &max_num_iterations,
+                                            const double &alpha,   
+                                            const double &msg_threshold,      
+                                            std::vector<int> &bit_array_out)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -264,7 +265,7 @@ decoding_result min_sum_decoding(const std::vector<double> &bit_array_llr,
                 
                 prod = sign_prod * ((bit_to_check_msg[j][i] > 0) ? 1. : -1.);       // Exclusion of the i-th sign
                 curr_bit_pos = matrix.check_nodes[j][i];
-                check_to_bit_msg[curr_bit_pos][check_pos_idx[curr_bit_pos]] = prod * get_min_abs_except(bit_to_check_msg[j], i);
+                check_to_bit_msg[curr_bit_pos][check_pos_idx[curr_bit_pos]] = alpha * prod * get_min_abs_except(bit_to_check_msg[j], i);
                 check_pos_idx[curr_bit_pos]++;
             }
         }
@@ -357,15 +358,16 @@ decoding_result min_sum_decoding(const std::vector<double> &bit_array_llr,
     return {max_num_iterations, false};
 }
 
-LDPC_result QKD_LDPC(const std::vector<int> &alice_bit_array, 
+LDPC_result QKD_LDPC(const H_matrix &matrix,
+                     const std::vector<int> &alice_bit_array, 
                      const std::vector<int> &bob_bit_array, 
-                     const double &QBER, 
-                     const H_matrix &matrix)
+                     const double &QBER,
+                     const double &alpha)
 {
     size_t num_bit_nodes = matrix.bit_nodes.size();
     size_t num_check_nodes = matrix.check_nodes.size();
 
-    double log_p = log((1. - QBER) / QBER);         // *30 magic number for min-sum 
+    double log_p = log((1. - QBER) / QBER);         
     std::vector<double> apriori_llr(num_bit_nodes);
 
     for (size_t i = 0; i < num_bit_nodes; ++i)
@@ -390,15 +392,15 @@ LDPC_result QKD_LDPC(const std::vector<int> &alice_bit_array,
 
     std::vector<int> bob_solution(num_bit_nodes);
     LDPC_result ldpc_res;
-    if (CFG.USE_MIN_SUM_DECODING_ALG)
+    if (CFG.USE_MIN_SUM_NORMALIZED_ALG)
     {
-        ldpc_res.decoding_res = min_sum_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
-                                           CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+        ldpc_res.decoding_res = min_sum_normalized_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
+                                                 alpha, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
     else
     {
         ldpc_res.decoding_res = sum_product_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
-                                               CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+                                                     CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
 
     if (CFG.TRACE_QKD_LDPC)

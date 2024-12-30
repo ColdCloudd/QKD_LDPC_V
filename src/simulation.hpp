@@ -19,6 +19,7 @@ struct sim_input
 {
     fs::path matrix_path{};
     std::vector<double> QBER{};
+    std::vector<double> alpha{};
     H_matrix matrix{};
 };
 
@@ -37,6 +38,7 @@ struct sim_result
     size_t num_bit_nodes{};                     // Number of bit nodes, which is defined as the number of columns in the parity check matrix.
     size_t num_check_nodes{};                   // Number of check nodes, which is defined as the number of rows in the parity check matrix.
     double initial_QBER{};                      // An accurate QBER that corresponds to the number of errors in the key.
+    double alpha{};                             // Normalization factor 𝛼 applied in min-sum normalized decoding algorithm.
     size_t iter_success_dec_alg_max{};          // The maximum number of iterations of the decoding algorithm (SPA or MSA) in which Alice's syndrome matched Bob's syndrome (i.e. successful).
     size_t iter_success_dec_alg_min{};          // The minimum number of iterations of the decoding algorithm.
     double iter_success_dec_alg_mean{};         // The mean number of iterations of the decoding algorithm. 
@@ -53,7 +55,12 @@ void write_file(const std::vector<sim_result> &data,
                 fs::path directory);
 
 std::vector<double> get_rate_based_QBER_range(const double code_rate,
-                                              const std::vector<R_QBER_params> &R_QBER_parameters);
+                                              const std::vector<R_QBER_map> &R_QBER_maps);
+
+std::vector<double> get_alpha_range_values(const alpha_range &alph_range);
+
+double get_rate_based_alpha_value(const double code_rate,
+                                  const std::vector<R_alpha_map> &R_alpha_maps);
 
 void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path);
 
@@ -61,6 +68,12 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
 
 trial_result run_trial(const H_matrix &matrix, 
                        double QBER, 
-                       size_t seed);
+                       size_t seed,
+                       const double &alpha = 1.);
+
+void process_trials_results(const std::vector<trial_result> &trial_results, 
+                            const size_t &num_bit_nodes, 
+                            const size_t &num_check_nodes,
+                            sim_result &result);
                        
 std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &sim_in);

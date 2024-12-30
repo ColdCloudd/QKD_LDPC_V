@@ -11,8 +11,24 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-// Structure that stores code rate values that correspond to a range of QBER values from QBER_begin to QBER_end in QBER_step increments.
-struct R_QBER_params
+// Alpha range specified using 'begin', 'end' and 'step'. If 'begin'=='end', only one value is used and 'step' is not taken into account.
+struct alpha_range
+{
+    double begin{};
+    double end{};
+    double step{};
+};
+
+// Structure that stores code rate value that correspond to alpha value.
+struct R_alpha_map
+{
+    double code_rate{};
+    double alpha{};
+};
+
+// Structure that stores code rate value that correspond to a range of QBER values from 'QBER_begin' to 'QBER_end' in 'QBER_step' increments.
+// If 'QBER_begin'=='QBER_end', only one value is used and 'step' is not taken into account.
+struct R_QBER_map
 {
     double code_rate{};
     double QBER_begin{};
@@ -48,23 +64,37 @@ struct config_data
     // RTT (Round-Trip Time) in milliseconds.
     size_t RTT{};
 
-    // Use MSA (Min-Sum Algorithm) decoding algorithm instead of SPA (Sum-Product Algorithm).
-    bool USE_MIN_SUM_DECODING_ALG{};
+    // Use MSA (Min-Sum Algorithm) normalized decoding algorithm instead of SPA (Sum-Product Algorithm).
+    bool USE_MIN_SUM_NORMALIZED_ALG{};
+
+    // When using MSA for all matrices, alpha values will be generated based on the range specified by 'ALPHA_RANGE'.
+    bool USE_ALPHA_RANGE{};
+
+    // Alpha range for all matrices, specified using 'begin', 'end' and 'step'.
+    alpha_range ALPHA_RANGE{};
+
+    // Code rate and alpha correspondence set.
+    std::vector<R_alpha_map> R_ALPHA_MAPS{};
 
     // The maximum number of iterations of the decoding algorithm.
     // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
-    // Use dense matrices (folder dense_matrices) instead of sparse matrices (folder alist_sparse_matrices).
     // Three options:
     // 0. Dense matrices (folder dense_matrices).
-    // 1. Sparse matrices in .alist format (folder alist_sparse_matrices).
-    // 2. Sparse matrices in format specified below (folder sparse_matrices).
+    // 1. Sparse matrices in '.alist' format (folder sparse_matrices_alist).
+    // 2. Sparse matrices in format specified below (folder sparse_matrices_1).
     // The first line contains the block length, N. The second line defines the number of parity-checks, M.
     // The third line defines the number of columns of the compressed parity-check matrix. 
     // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
     // indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
-    // the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html
+    // the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
+    // 3. Sparse matrices in format specified below (folder sparse_matrices_2).
+    // Read sparse matrix from file in format:
+    // The first line contains two numbers: the first is the block length (N) and the second is the number of parity-checks (M).
+    // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
+    // indices (0 ... N-1) of 1's in the compressed row of parity-check matrix. 
+    // The next N lines contains the indices (0 ... M-1) of 1's in the compressed column of parity-check matrix.
     size_t MATRIX_FORMAT{};
 
     // Output intermediate results of LDPC operation to the console.
@@ -84,9 +114,10 @@ struct config_data
     double DECODING_ALG_MSG_LLR_THRESHOLD{};
 
     // Code rate and QBER correspondence set.
-    std::vector<R_QBER_params> R_QBER_PARAMETERS{};
+    std::vector<R_QBER_map> R_QBER_MAPS{};
 };
 
 extern config_data CFG;
+const double EPSILON = 1e-6;
 
 config_data get_config_data(fs::path config_path);

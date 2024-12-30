@@ -44,7 +44,7 @@ int main()
             {
                 throw std::runtime_error("Matrix folder is empty: " + matrix_dir_path.string());
             }
-
+            
             std::vector<sim_input> sim_inputs = prepare_sim_inputs(matrix_paths);
             std::vector<sim_result> sim_results = QKD_LDPC_batch_simulation(sim_inputs);
 
