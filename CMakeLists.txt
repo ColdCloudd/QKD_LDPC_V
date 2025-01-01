@@ -43,7 +43,12 @@ CPMAddPackage(
     OPTIONS
         "JSON_BuildTests OFF")
 
+option(USE_CURRENT_DIR "Use current directory where executable file is located instead of SOURCE_DIR to read and write files" OFF)
+if(USE_CURRENT_DIR)
+    add_definitions(-DUSE_CURRENT_DIR)
+endif()
 add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 add_executable(QKD_LDPC 
     src/main.cpp
     src/config.hpp

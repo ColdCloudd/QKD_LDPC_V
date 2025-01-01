@@ -1,17 +1,23 @@
-﻿#include <filesystem>
-
-#include "config.hpp"
+﻿#include "config.hpp"
 #include "simulation.hpp"
 
 namespace fs = std::filesystem;
 
+#ifdef USE_CURRENT_DIR
+const fs::path CONFIG_PATH = std::filesystem::current_path() / "config.json";
+const fs::path DENSE_MATRIX_DIR_PATH = std::filesystem::current_path() / "dense_matrices";
+const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = std::filesystem::current_path() / "sparse_matrices_alist";
+const fs::path SPARSE_MATRIX_1_DIR_PATH = std::filesystem::current_path() / "sparse_matrices_1";
+const fs::path SPARSE_MATRIX_2_DIR_PATH = std::filesystem::current_path() / "sparse_matrices_2";
+const fs::path RESULTS_DIR_PATH = std::filesystem::current_path() / "results";
+#else
 const fs::path CONFIG_PATH = fs::path(SOURCE_DIR) / "config.json";
 const fs::path DENSE_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "dense_matrices";
 const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_alist";
 const fs::path SPARSE_MATRIX_1_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_1";
 const fs::path SPARSE_MATRIX_2_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices_2";
-
 const fs::path RESULTS_DIR_PATH = fs::path(SOURCE_DIR) / "results";
+#endif
 
 config_data CFG;
 
@@ -57,6 +63,9 @@ int main()
         fmt::print(stderr, fg(fmt::color::red), "ERROR: {}\n", e.what());
         return EXIT_FAILURE;
     }
+
+    fmt::print(fg(fmt::color::green), "Press Enter to exit...");
+    std::cin.get();
 
     return EXIT_SUCCESS;
 }
