@@ -3,6 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <limits>
+#include <locale>
 
 #include <fmt/core.h>
 #include <fmt/color.h>
