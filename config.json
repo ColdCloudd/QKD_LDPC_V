@@ -2,7 +2,7 @@
     "threads_number": 16,
     "trials_number": 1000000,
     "use_config_simulation_seed": true,
-    "simulation_seed": 2012025,
+    "simulation_seed": 6012025,
     "interactive_mode": false,
     "enable_privacy_maintenance": false,
     "enable_throughput_measurement": false,
@@ -32,14 +32,14 @@
     "decoding_algorithm_msg_llr_threshold": 100.0,
     "code_rate_QBER_maps": 
     [
-        {"code_rate": 0.51, "QBER_begin": 0.085, "QBER_end": 0.09, "QBER_step": 0.001},
-        {"code_rate": 0.56, "QBER_begin": 0.07, "QBER_end": 0.075, "QBER_step": 0.001},
-        {"code_rate": 0.61, "QBER_begin": 0.055, "QBER_end": 0.065, "QBER_step": 0.001},
-        {"code_rate": 0.66, "QBER_begin": 0.04, "QBER_end": 0.045, "QBER_step": 0.001},
-        {"code_rate": 0.71, "QBER_begin": 0.035, "QBER_end": 0.04, "QBER_step": 0.001},
-        {"code_rate": 0.76, "QBER_begin": 0.025, "QBER_end": 0.03, "QBER_step": 0.001},
-        {"code_rate": 0.81, "QBER_begin": 0.015, "QBER_end": 0.02, "QBER_step": 0.001},
-        {"code_rate": 0.86, "QBER_begin": 0.01, "QBER_end": 0.015, "QBER_step": 0.001},
-        {"code_rate": 0.91, "QBER_begin": 0.005, "QBER_end": 0.01, "QBER_step": 0.001}
+        {"code_rate": 0.51, "QBER_begin": 0.091, "QBER_end": 0.091, "QBER_step": 0.001},
+        {"code_rate": 0.56, "QBER_begin": 0.078, "QBER_end": 0.078, "QBER_step": 0.001},
+        {"code_rate": 0.61, "QBER_begin": 0.063, "QBER_end": 0.063, "QBER_step": 0.001},
+        {"code_rate": 0.66, "QBER_begin": 0.054, "QBER_end": 0.054, "QBER_step": 0.001},
+        {"code_rate": 0.71, "QBER_begin": 0.042, "QBER_end": 0.042, "QBER_step": 0.001},
+        {"code_rate": 0.76, "QBER_begin": 0.032, "QBER_end": 0.032, "QBER_step": 0.001},
+        {"code_rate": 0.81, "QBER_begin": 0.022, "QBER_end": 0.022, "QBER_step": 0.001},
+        {"code_rate": 0.86, "QBER_begin": 0.015, "QBER_end": 0.015, "QBER_step": 0.001},
+        {"code_rate": 0.91, "QBER_begin": 0.005, "QBER_end": 0.005, "QBER_step": 0.001}
     ]
 }

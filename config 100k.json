@@ -1,0 +1,52 @@
+{
+    "threads_number": 16,
+    "trials_number": 1000,
+    "use_config_simulation_seed": true,
+    "simulation_seed": 4012025,
+    "interactive_mode": false,
+    "enable_privacy_maintenance": false,
+    "enable_throughput_measurement": false,
+    "throughput_measurement_parameters": 
+    {
+        "consider_RTT": true,
+        "RTT": 20
+    },
+    "use_min_sum_normalized_algorithm": false,
+    "min_sum_normalized_parameters":
+    {
+        "use_alpha_range": false,
+        "alpha_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_alpha_maps":
+        [
+            {"code_rate": 0.36, "alpha": 0.55},
+            {"code_rate": 0.58, "alpha": 0.72},
+            {"code_rate": 0.95, "alpha": 0.76}
+        ]
+    },
+    "decoding_algorithm_max_iterations": 100,
+    "matrix_format": 1,
+    "trace_qkd_ldpc": false,
+    "trace_decoding_algorithm": false,
+    "trace_decoding_algorithm_llr": false,
+    "enable_decoding_algorithm_msg_llr_threshold": true,
+    "decoding_algorithm_msg_llr_threshold": 100.0,
+    "code_rate_QBER_maps": 
+    [
+        {"code_rate": 0.365, "QBER_begin": 0.125, "QBER_end": 0.13, "QBER_step": 0.001},
+        {"code_rate": 0.375, "QBER_begin": 0.12, "QBER_end": 0.125, "QBER_step": 0.001},
+        {"code_rate": 0.385, "QBER_begin": 0.115, "QBER_end": 0.12, "QBER_step": 0.001},
+        {"code_rate": 0.405, "QBER_begin": 0.11, "QBER_end": 0.115, "QBER_step": 0.001},
+        {"code_rate": 0.415, "QBER_begin": 0.105, "QBER_end": 0.11, "QBER_step": 0.001},
+        {"code_rate": 0.435, "QBER_begin": 0.1, "QBER_end": 0.105, "QBER_step": 0.001},
+        {"code_rate": 0.455, "QBER_begin": 0.095, "QBER_end": 0.1, "QBER_step": 0.001},
+        {"code_rate": 0.475, "QBER_begin": 0.085, "QBER_end": 0.09, "QBER_step": 0.001},
+        {"code_rate": 0.495, "QBER_begin": 0.08, "QBER_end": 0.085, "QBER_step": 0.001},
+        {"code_rate": 0.515, "QBER_begin": 0.075, "QBER_end": 0.08, "QBER_step": 0.001},
+        {"code_rate": 0.525, "QBER_begin": 0.075, "QBER_end": 0.08, "QBER_step": 0.001},
+        {"code_rate": 0.555, "QBER_begin": 0.065, "QBER_end": 0.07, "QBER_step": 0.001},
+        {"code_rate": 0.575, "QBER_begin": 0.06, "QBER_end": 0.065, "QBER_step": 0.001},
+        {"code_rate": 0.595, "QBER_begin": 0.055, "QBER_end": 0.06, "QBER_step": 0.001},
+        {"code_rate": 0.615, "QBER_begin": 0.05, "QBER_end": 0.055, "QBER_step": 0.001},
+        {"code_rate": 0.645, "QBER_begin": 0.045, "QBER_end": 0.05, "QBER_step": 0.001}
+    ]
+}
