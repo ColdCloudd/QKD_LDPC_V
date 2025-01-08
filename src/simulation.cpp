@@ -28,8 +28,10 @@ void write_file(const std::vector<sim_result> &data,
         }
 
         std::locale russian("ru_RU.utf8");
+        std::locale no_thousands(russian, new std::numpunct<char>());
         std::fstream fout;
-        fout.imbue(russian);
+        fout.imbue(no_thousands);
+        
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
         fout << "№;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_DEC_ALG_MEAN;ITERATIONS_SUCCESSFUL_DEC_ALG_STD_DEV;ITERATIONS_SUCCESSFUL_DEC_ALG_MIN;ITERATIONS_SUCCESSFUL_DEC_ALG_MAX;" << 
         "RATIO_TRIALS_SUCCESSFUL_DEC_ALG;RATIO_TRIALS_SUCCESSFUL_LDPC;FER" << (CFG.ENABLE_THROUGHPUT_MEASUREMENT ? ";THROUGHPUT_MEAN;THROUGHPUT_STD_DEV;THROUGHPUT_MIN;THROUGHPUT_MAX" : "") << 
