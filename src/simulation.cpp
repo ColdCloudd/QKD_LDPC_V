@@ -1,5 +1,17 @@
 #include "simulation.hpp"
 
+// Custom locale settings
+class custom_numpunct : public std::numpunct<char> {
+protected:
+    char do_decimal_point() const override {
+        return ','; 
+    }
+
+    std::string do_grouping() const override {
+        return ""; 
+    }
+};
+
 // Records the results of the simulation in a ".csv" format file
 void write_file(const std::vector<sim_result> &data,
                 fs::path directory)
@@ -27,10 +39,9 @@ void write_file(const std::vector<sim_result> &data,
             file_count++;
         }
 
-        std::locale russian("ru_RU.utf8");
-        std::locale no_thousands(russian, new std::numpunct<char>());
+        std::locale custom_locale(std::locale("ru_RU.utf8"), new custom_numpunct());
         std::fstream fout;
-        fout.imbue(no_thousands);
+        fout.imbue(custom_locale);
         
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
         fout << "#;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_DEC_ALG_MEAN;ITERATIONS_SUCCESSFUL_DEC_ALG_STD_DEV;ITERATIONS_SUCCESSFUL_DEC_ALG_MIN;ITERATIONS_SUCCESSFUL_DEC_ALG_MAX;" << 

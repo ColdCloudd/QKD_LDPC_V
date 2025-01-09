@@ -1,6 +1,6 @@
 {
     "threads_number": 16,
-    "trials_number": 10000,
+    "trials_number": 1,
     "use_config_simulation_seed": true,
     "simulation_seed": 9012025,
     "interactive_mode": false,
@@ -38,7 +38,7 @@
         {"code_rate": 0.405, "QBER_begin": 0.11, "QBER_end": 0.11, "QBER_step": 0.001},
         {"code_rate": 0.415, "QBER_begin": 0.106, "QBER_end": 0.106, "QBER_step": 0.001},
         {"code_rate": 0.435, "QBER_begin": 0.1, "QBER_end": 0.1, "QBER_step": 0.001},
-        {"code_rate": 0.455, "QBER_begin": 0.095, "QBER_end": 0.095, "QBER_step": 0.001},
+        {"code_rate": 0.455, "QBER_begin": 0.094, "QBER_end": 0.094, "QBER_step": 0.001},
         {"code_rate": 0.475, "QBER_begin": 0.089, "QBER_end": 0.089, "QBER_step": 0.001},
         {"code_rate": 0.495, "QBER_begin": 0.084, "QBER_end": 0.084, "QBER_step": 0.001},
         {"code_rate": 0.515, "QBER_begin": 0.079, "QBER_end": 0.079, "QBER_step": 0.001},
