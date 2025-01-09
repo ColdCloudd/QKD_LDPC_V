@@ -61,6 +61,8 @@ int main()
     catch (const std::exception &e)
     {
         fmt::print(stderr, fg(fmt::color::red), "ERROR: {}\n", e.what());
+        fmt::print(fg(fmt::color::red), "Press Enter to exit...");
+        std::cin.get();
         return EXIT_FAILURE;
     }
 
