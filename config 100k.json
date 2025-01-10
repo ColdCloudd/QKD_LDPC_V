@@ -1,6 +1,6 @@
 {
     "threads_number": 16,
-    "trials_number": 10000,
+    "trials_number": 100,
     "use_config_simulation_seed": true,
     "simulation_seed": 9012025,
     "interactive_mode": false,
