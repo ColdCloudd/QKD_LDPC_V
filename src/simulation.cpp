@@ -1,13 +1,16 @@
 #include "simulation.hpp"
 
 // Custom locale settings
-class custom_numpunct : public std::numpunct<char> {
+class custom_numpunct : public std::numpunct<char> 
+{
 protected:
-    char do_decimal_point() const override {
+    char do_decimal_point() const override 
+    {
         return ','; 
     }
 
-    std::string do_grouping() const override {
+    std::string do_grouping() const override 
+    {
         return ""; 
     }
 };
@@ -489,7 +492,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
                                         [&matrix, &QBER, &trial_results, &seeds, &curr_sim, &bar](size_t n)
                                         {
                                             trial_results[n] = run_trial(matrix, QBER, (seeds[n] + curr_sim));
-                                            bar.tick(); // For correct time estimation
+                                            bar.tick(); // For correct time estimation (move outside this loop to speed up execution time)
                                         });
                 pool.wait();
 
