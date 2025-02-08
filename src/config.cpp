@@ -57,56 +57,88 @@ config_data get_config_data(fs::path config_path)
             if (cfg.CONSIDER_RTT)
                 cfg.RTT = tm_params["RTT"].template get<size_t>();
         }
-                
-        cfg.USE_MIN_SUM_NORMALIZED_ALG = config["use_min_sum_normalized_algorithm"].template get<bool>();
-        if (cfg.USE_MIN_SUM_NORMALIZED_ALG)
+
+        cfg.DECODING_ALGORITHM = config["decoding_algorithm"].template get<size_t>();
+        if (cfg.DECODING_ALGORITHM > 3)
         {
-            const auto &msn_params = config["min_sum_normalized_parameters"];
-            cfg.USE_ALPHA_RANGE = msn_params["use_alpha_range"].template get<bool>();
-            if (cfg.USE_ALPHA_RANGE)
+            throw std::runtime_error("Only four options are available: \n0 - SPA;\n1 - SPA (with linear approximation of tanh and atanh);\n2 - NMSA;\n3 - OMSA.");
+        }
+        if (cfg.DECODING_ALGORITHM == 2 || cfg.DECODING_ALGORITHM == 3)
+        {   
+            nlohmann::json alg_params;
+            if (cfg.DECODING_ALGORITHM == 2)
             {
-                const auto &a_range = msn_params["alpha_range"];
-                cfg.ALPHA_RANGE = {a_range["begin"].template get<double>(), a_range["end"].template get<double>(), a_range["step"].template get<double>()};
-                if (cfg.ALPHA_RANGE.begin <= 0. || cfg.ALPHA_RANGE.end <= 0. || cfg.ALPHA_RANGE.step <= 0.)
+                alg_params = config["min_sum_normalized_parameters"];
+                cfg.USE_SCALING_FACTOR_RANGE = alg_params["use_alpha_range"].template get<bool>();
+            }
+            else
+            {
+                alg_params = config["min_sum_offset_parameters"];
+                cfg.USE_SCALING_FACTOR_RANGE = alg_params["use_beta_range"].template get<bool>();
+            }
+            
+            if (cfg.USE_SCALING_FACTOR_RANGE)
+            {
+                nlohmann::json scaling_factor_range;
+                if (cfg.DECODING_ALGORITHM == 2)
+                    scaling_factor_range = alg_params["alpha_range"];
+                else
+                    scaling_factor_range = alg_params["beta_range"];
+                
+                cfg.SCALING_FACTOR_RANGE = {scaling_factor_range["begin"].template get<double>(), scaling_factor_range["end"].template get<double>(), scaling_factor_range["step"].template get<double>()};
+                if (cfg.SCALING_FACTOR_RANGE.begin <= 0. || cfg.SCALING_FACTOR_RANGE.end <= 0. || cfg.SCALING_FACTOR_RANGE.step <= 0.)
                 {
-                    throw std::runtime_error("Alpha range begin, end, step must be > 0!");
+                    throw std::runtime_error("Alpha (or beta) range begin, end, step must be > 0!");
                 }
-                if (cfg.ALPHA_RANGE.begin > cfg.ALPHA_RANGE.end)
+                if (cfg.SCALING_FACTOR_RANGE.begin > cfg.SCALING_FACTOR_RANGE.end)
                 {
-                    throw std::runtime_error("Alpha range begin cannot be larger than end!");
+                    throw std::runtime_error("Alpha (or beta) range begin cannot be larger than end!");
                 }
-                if (cfg.ALPHA_RANGE.begin != cfg.ALPHA_RANGE.end)
+                if (cfg.SCALING_FACTOR_RANGE.begin != cfg.SCALING_FACTOR_RANGE.end)
                 {
-                    if (cfg.ALPHA_RANGE.step - EPSILON > cfg.ALPHA_RANGE.end - cfg.ALPHA_RANGE.begin)
+                    if (cfg.SCALING_FACTOR_RANGE.step - EPSILON > cfg.SCALING_FACTOR_RANGE.end - cfg.SCALING_FACTOR_RANGE.begin)
                     {
-                        throw std::runtime_error("Alpha range step is too large!");
+                        throw std::runtime_error("Alpha (or beta) range step is too large!");
                     }
                 }
             }
             else
             {
-                const auto &r_alpha_maps = msn_params["code_rate_alpha_maps"];
-                for (const auto &m : r_alpha_maps)
+                nlohmann::json r_scaling_factor_maps;
+                if (cfg.DECODING_ALGORITHM == 2)
                 {
-                    cfg.R_ALPHA_MAPS.push_back({m["code_rate"].template get<double>(), m["alpha"].template get<double>()});
+                    r_scaling_factor_maps = alg_params["code_rate_alpha_maps"];
+                    for (const auto &m : r_scaling_factor_maps)
+                    {
+                        cfg.R_SCALING_FACTOR_MAPS.push_back({m["code_rate"].template get<double>(), m["alpha"].template get<double>()});
+                    }
                 }
-                if (cfg.R_ALPHA_MAPS.empty())
+                else
                 {
-                    throw std::runtime_error("Array with code rate(R) and alpha maps is empty!");
+                    r_scaling_factor_maps = alg_params["code_rate_beta_maps"];
+                    for (const auto &m : r_scaling_factor_maps)
+                    {
+                        cfg.R_SCALING_FACTOR_MAPS.push_back({m["code_rate"].template get<double>(), m["beta"].template get<double>()});
+                    }
                 }
-                for (size_t i = 0; i < cfg.R_ALPHA_MAPS.size(); i++)
+                
+                if (cfg.R_SCALING_FACTOR_MAPS.empty())
                 {
-                    if (cfg.R_ALPHA_MAPS[i].code_rate <= 0. || cfg.R_ALPHA_MAPS[i].code_rate >= 1.)
+                    throw std::runtime_error("Array with code rate(R) and alpha (or beta) maps is empty!");
+                }
+                for (size_t i = 0; i < cfg.R_SCALING_FACTOR_MAPS.size(); i++)
+                {
+                    if (cfg.R_SCALING_FACTOR_MAPS[i].code_rate <= 0. || cfg.R_SCALING_FACTOR_MAPS[i].code_rate >= 1.)
                     {
                         throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
                     }
-                    if (cfg.R_ALPHA_MAPS[i].alpha <= 0.)
+                    if (cfg.R_SCALING_FACTOR_MAPS[i].scaling_factor <= 0.)
                     {
-                        throw std::runtime_error("Alpha must be > 0!");
+                        throw std::runtime_error("Alpha (or beta) must be > 0!");
                     }
                 }
-                std::sort(cfg.R_ALPHA_MAPS.begin(), cfg.R_ALPHA_MAPS.end(),
-                  [](R_alpha_map &a, R_alpha_map &b)
+                std::sort(cfg.R_SCALING_FACTOR_MAPS.begin(), cfg.R_SCALING_FACTOR_MAPS.end(),
+                  [](R_scaling_factor_map &a, R_scaling_factor_map &b)
                   {
                         return (a.code_rate < b.code_rate);
                   });

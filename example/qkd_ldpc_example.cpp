@@ -15,7 +15,7 @@ int main()
     {
         CFG.DECODING_ALG_MAX_ITERATIONS = 100;
 
-        CFG.USE_MIN_SUM_NORMALIZED_ALG = false;               // Use Sum-Product
+        CFG.DECODING_ALGORITHM = 0;               // Use Sum-Product
         CFG.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD = true;
         CFG.DECODING_ALG_MSG_LLR_THRESHOLD = 100.;
 

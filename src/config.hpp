@@ -11,19 +11,19 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-// Alpha range specified using 'begin', 'end' and 'step'. If 'begin'=='end', only one value is used and 'step' is not taken into account.
-struct alpha_range
+// Alpha (or beta) range specified using 'begin', 'end' and 'step'. If 'begin'=='end', only one value is used and 'step' is not taken into account.
+struct scaling_factor_range
 {
     double begin{};
     double end{};
     double step{};
 };
 
-// Structure that stores code rate value that correspond to alpha value.
-struct R_alpha_map
+// Structure that stores code rate value that correspond to alpha (or beta) value.
+struct R_scaling_factor_map
 {
     double code_rate{};
-    double alpha{};
+    double scaling_factor{};
 };
 
 // Structure that stores code rate value that correspond to a range of QBER values from 'QBER_begin' to 'QBER_end' in 'QBER_step' increments.
@@ -64,32 +64,36 @@ struct config_data
     // RTT (Round-Trip Time) in milliseconds.
     size_t RTT{};
 
-    // Use MSA (Min-Sum Algorithm) normalized decoding algorithm instead of SPA (Sum-Product Algorithm).
-    bool USE_MIN_SUM_NORMALIZED_ALG{};
+    // Four options:
+    // 0.   SPA (Sum-Product Algorithm).
+    // 1.   SPA with linear approximation of tanh and atanh functions.
+    // 2.   NMSA (Normalized Min-Sum Algorithm) with α-factor.
+    // 3.   OMSA (Offset Min-Sum Algorithm) with β-factor.
+    size_t DECODING_ALGORITHM{};
 
-    // When using MSA for all matrices, alpha values will be generated based on the range specified by 'ALPHA_RANGE'.
-    bool USE_ALPHA_RANGE{};
+    // When using NMSA (or OMSA) for all matrices, alpha (or beta) values will be generated based on the range specified by 'SCALING_FACTOR_RANGE'.
+    bool USE_SCALING_FACTOR_RANGE{};
 
-    // Alpha range for all matrices, specified using 'begin', 'end' and 'step'.
-    alpha_range ALPHA_RANGE{};
+    // Alpha (or beta) range for all matrices, specified using 'begin', 'end' and 'step'.
+    scaling_factor_range SCALING_FACTOR_RANGE{};
 
-    // Code rate and alpha correspondence set.
-    std::vector<R_alpha_map> R_ALPHA_MAPS{};
+    // Code rate and alpha (or beta) correspondence set.
+    std::vector<R_scaling_factor_map> R_SCALING_FACTOR_MAPS{};
 
     // The maximum number of iterations of the decoding algorithm.
     // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
-    // Three options:
-    // 0. Dense matrices (folder dense_matrices).
-    // 1. Sparse matrices in '.alist' format (folder sparse_matrices_alist).
-    // 2. Sparse matrices in format specified below (folder sparse_matrices_1).
+    // Four options:
+    // 0.   Dense matrices (folder dense_matrices).
+    // 1.   Sparse matrices in '.alist' format (folder sparse_matrices_alist).
+    // 2.   Sparse matrices in format specified below (folder sparse_matrices_1).
     // The first line contains the block length, N. The second line defines the number of parity-checks, M.
     // The third line defines the number of columns of the compressed parity-check matrix. 
     // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
     // indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
     // the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
-    // 3. Sparse matrices in format specified below (folder sparse_matrices_2).
+    // 3.   Sparse matrices in format specified below (folder sparse_matrices_2).
     // Read sparse matrix from file in format:
     // The first line contains two numbers: the first is the block length (N) and the second is the number of parity-checks (M).
     // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 

@@ -20,7 +20,7 @@ struct sim_input
 {
     fs::path matrix_path{};
     std::vector<double> QBER{};
-    std::vector<double> alpha{};
+    std::vector<double> scaling_factor{};
     H_matrix matrix{};
 };
 
@@ -39,8 +39,8 @@ struct sim_result
     size_t num_bit_nodes{};                     // Number of bit nodes, which is defined as the number of columns in the parity check matrix.
     size_t num_check_nodes{};                   // Number of check nodes, which is defined as the number of rows in the parity check matrix.
     double initial_QBER{};                      // An accurate QBER that corresponds to the number of errors in the key.
-    double alpha{};                             // Normalization factor 𝛼 applied in min-sum normalized decoding algorithm.
-    size_t iter_success_dec_alg_max{};          // The maximum number of iterations of the decoding algorithm (SPA or MSA) in which Alice's syndrome matched Bob's syndrome (i.e. successful).
+    double scaling_factor{};                    // Scaling factor 𝛼 (or β) applied in NMSA (or OMSA) decoding algorithm.
+    size_t iter_success_dec_alg_max{};          // The maximum number of iterations of the decoding algorithm in which Alice's syndrome matched Bob's syndrome (i.e. successful).
     size_t iter_success_dec_alg_min{};          // The minimum number of iterations of the decoding algorithm.
     double iter_success_dec_alg_mean{};         // The mean number of iterations of the decoding algorithm. 
     double iter_success_dec_alg_std_dev{};      // The standard deviation of iterations of the decoding algorithm. 
@@ -58,10 +58,10 @@ void write_file(const std::vector<sim_result> &data,
 std::vector<double> get_rate_based_QBER_range(const double code_rate,
                                               const std::vector<R_QBER_map> &R_QBER_maps);
 
-std::vector<double> get_alpha_range_values(const alpha_range &alph_range);
+std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &scaling_factor_range);
 
-double get_rate_based_alpha_value(const double code_rate,
-                                  const std::vector<R_alpha_map> &R_alpha_maps);
+double get_rate_based_scaling_factor_value(const double code_rate,
+                                           const std::vector<R_scaling_factor_map> &R_scaling_factor_maps);
 
 void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path);
 
@@ -70,7 +70,7 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
 trial_result run_trial(const H_matrix &matrix, 
                        double QBER, 
                        size_t seed,
-                       const double &alpha = 1.);
+                       const double &scaling_factor = 1.);
 
 void process_trials_results(const std::vector<trial_result> &trial_results, 
                             const size_t &num_bit_nodes, 
