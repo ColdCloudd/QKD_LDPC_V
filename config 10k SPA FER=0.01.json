@@ -11,36 +11,23 @@
         "consider_RTT": false,
         "RTT": 20
     },
-    "use_min_sum_normalized_algorithm": false,
+    "decoding_algorithm": 0,
     "min_sum_normalized_parameters":
     {
         "use_alpha_range": false,
         "alpha_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
         "code_rate_alpha_maps":
         [
-            {"code_rate": 0.385, "alpha": 0.8},
-            {"code_rate": 0.405, "alpha": 0.8},
-            {"code_rate": 0.415, "alpha": 0.8},
-            {"code_rate": 0.435, "alpha": 0.8},
-            {"code_rate": 0.455, "alpha": 0.8},
-            {"code_rate": 0.475, "alpha": 0.8},
-            {"code_rate": 0.495, "alpha": 0.8},
-            {"code_rate": 0.515, "alpha": 0.8},
-            {"code_rate": 0.525, "alpha": 0.8},
-            {"code_rate": 0.555, "alpha": 0.8},
-            {"code_rate": 0.575, "alpha": 0.8},
-
-            {"code_rate": 0.595, "alpha": 0.8},
-            {"code_rate": 0.615, "alpha": 0.8},
-            {"code_rate": 0.645, "alpha": 0.8},
-            {"code_rate": 0.665, "alpha": 0.69},
-            {"code_rate": 0.695, "alpha": 0.71},
-            {"code_rate": 0.725, "alpha": 0.71},
-            {"code_rate": 0.765, "alpha": 0.71},
-            {"code_rate": 0.795, "alpha": 0.71},
-            {"code_rate": 0.825, "alpha": 0.7},
-            {"code_rate": 0.875, "alpha": 0.65},
             {"code_rate": 0.925, "alpha": 0.65}
+        ]
+    },
+    "min_sum_offset_parameters":
+    {
+        "use_beta_range": false,
+        "beta_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_beta_maps":
+        [
+            {"code_rate": 0.925, "beta": 0.58}
         ]
     },
     "decoding_algorithm_max_iterations": 100,

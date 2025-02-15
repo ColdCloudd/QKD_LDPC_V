@@ -25,15 +25,15 @@ int main()
 {
     try
     {
-        CFG = get_config_data(CONFIG_PATH);
+        CFG = parse_config_data(CONFIG_PATH);
         fs::path matrix_dir_path;
-        if (CFG.MATRIX_FORMAT == 0)
+        if (CFG.MATRIX_FORMAT == DENSE_MAT)
             matrix_dir_path = DENSE_MATRIX_DIR_PATH;
-        else if (CFG.MATRIX_FORMAT == 1)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_ALIST)
             matrix_dir_path = SPARSE_MATRIX_ALIST_DIR_PATH;
-        else if (CFG.MATRIX_FORMAT == 2)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_1)
             matrix_dir_path = SPARSE_MATRIX_1_DIR_PATH;
-        else if (CFG.MATRIX_FORMAT == 3)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_2)
             matrix_dir_path = SPARSE_MATRIX_2_DIR_PATH;
         
         if (CFG.INTERACTIVE_MODE)

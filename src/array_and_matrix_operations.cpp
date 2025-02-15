@@ -99,11 +99,7 @@ double get_max_llr(const std::vector<std::vector<double>> &matrix)
 bool arrays_equal(const std::vector<int> &array1,
                   const std::vector<int> &array2)
 {
-    if (array1.size() != array2.size())
-    {
-        return false;
-    }
-    for (size_t i = 0; i < array1.size(); i++)
+    for (size_t i = 0; i < array1.size(); ++i)
     {
         if (array1[i] != array2[i])
         {

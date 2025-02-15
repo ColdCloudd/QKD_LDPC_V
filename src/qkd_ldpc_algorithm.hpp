@@ -57,8 +57,26 @@ decoding_result min_sum_offset_decoding(const std::vector<double> &bit_array_llr
                                         const double &msg_threshold,      
                                         std::vector<int> &bit_array_out);
 
+decoding_result adaptive_min_sum_normalized_decoding(const std::vector<double> &bit_array_llr,
+                                                     const H_matrix &matrix, 
+                                                     const std::vector<int> &syndrome,              
+                                                     const size_t &max_num_iterations,
+                                                     const double &alpha, 
+                                                     const double &nu, 
+                                                     const double &msg_threshold,      
+                                                     std::vector<int> &bit_array_out);
+
+decoding_result adaptive_min_sum_offset_decoding(const std::vector<double> &bit_array_llr,
+                                                 const H_matrix &matrix, 
+                                                 const std::vector<int> &syndrome,              
+                                                 const size_t &max_num_iterations,
+                                                 const double &beta, 
+                                                 const double &sigma, 
+                                                 const double &msg_threshold,      
+                                                 std::vector<int> &bit_array_out);
+
 LDPC_result QKD_LDPC(const H_matrix &matrix,
                      const std::vector<int> &alice_bit_array, 
                      const std::vector<int> &bob_bit_array, 
                      const double &QBER,
-                     const double &scaling_factor = 1.);
+                     const decoding_scaling_factors &scaling_factors = {});

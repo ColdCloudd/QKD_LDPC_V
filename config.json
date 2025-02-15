@@ -1,8 +1,8 @@
 {
     "threads_number": 16,
-    "trials_number": 10,
+    "trials_number": 1,
     "use_config_simulation_seed": true,
-    "simulation_seed": 9022025,
+    "simulation_seed": 777,
     "interactive_mode": false,
     "enable_privacy_maintenance": false,
     "enable_throughput_measurement": false,
@@ -11,23 +11,53 @@
         "consider_RTT": true,
         "RTT": 20
     },
-    "decoding_algorithm": 3,
+    "decoding_algorithm": 4,
     "min_sum_normalized_parameters":
     {
         "use_alpha_range": false,
         "alpha_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
         "code_rate_alpha_maps":
         [
-            {"code_rate": 0.7, "alpha": 0.64}
+            {"code_rate": 0.575, "alpha": 0.8}
         ]
     },
     "min_sum_offset_parameters":
     {
-        "use_beta_range": true,
+        "use_beta_range": false,
         "beta_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
         "code_rate_beta_maps":
         [
-            {"code_rate": 0.7, "beta": 0.58}
+            {"code_rate": 0.575, "beta": 0.5}
+        ]
+    },
+    "adaptive_min_sum_normalized_parameters":
+    {
+        "use_alpha_range": false,
+        "alpha_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_alpha_maps":
+        [
+            {"code_rate": 0.575, "alpha": 0.8}
+        ],
+        "use_nu_range": false,
+        "nu_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_nu_maps":
+        [
+            {"code_rate": 0.575, "nu": 0.4}
+        ]
+    },
+    "adaptive_min_sum_offset_parameters":
+    {
+        "use_beta_range": false,
+        "beta_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_beta_maps":
+        [
+            {"code_rate": 0.575, "beta": 0.5}
+        ],
+        "use_sigma_range": false,
+        "sigma_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_sigma_maps":
+        [
+            {"code_rate": 0.575, "sigma": 1.3}
         ]
     },
     "decoding_algorithm_max_iterations": 100,
@@ -39,6 +69,6 @@
     "decoding_algorithm_msg_llr_threshold": 100.0,
     "code_rate_QBER_maps": 
     [
-        {"code_rate": 0.925, "QBER_begin": 0.005, "QBER_end": 0.11, "QBER_step": 0.005}
+        {"code_rate": 0.575, "QBER_begin": 0.058, "QBER_end": 0.07, "QBER_step": 0.001}
     ]
 }

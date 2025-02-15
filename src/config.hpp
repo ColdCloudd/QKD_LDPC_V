@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-// Alpha (or beta) range specified using 'begin', 'end' and 'step'. If 'begin'=='end', only one value is used and 'step' is not taken into account.
+// Alpha (or beta, nu, sigma) range specified using 'begin', 'end' and 'step'. If 'begin'=='end', only one value is used and 'step' is not taken into account.
 struct scaling_factor_range
 {
     double begin{};
@@ -19,11 +19,38 @@ struct scaling_factor_range
     double step{};
 };
 
-// Structure that stores code rate value that correspond to alpha (or beta) value.
+// Structure that stores code rate value that correspond to alpha (or beta, nu, sigma) value.
 struct R_scaling_factor_map
 {
     double code_rate{};
     double scaling_factor{};
+};
+
+// Parameters for parity-check matrices when using NMSA, OMSA, ANMSA and AOMSA algorithms.
+struct algorithm_params 
+{
+    // Common parameters for NMSA, OMSA, ANMSA and AOMSA algorithms.
+    struct 
+    {
+        bool use_range{};                           // For all matrices, scaling factor values will be generated based on the range specified by 'range'.
+        scaling_factor_range range{};               // Range for all matrices, specified using 'begin', 'end' and 'step'.
+        std::vector<R_scaling_factor_map> maps{};   // Code rate and scaling factor correspondence set.
+    } primary;
+    
+    // Additional parameters for ANMSA and AOMSA algorithms.
+    struct 
+    {
+        bool use_range{};
+        scaling_factor_range range{};
+        std::vector<R_scaling_factor_map> maps{};
+    } secondary;
+};
+
+// Structure for storing factors passed to NMSA, OMSA, ANMSA and AOMSA algorithms.
+struct decoding_scaling_factors
+{
+    double primary{};
+    double secondary{};
 };
 
 // Structure that stores code rate value that correspond to a range of QBER values from 'QBER_begin' to 'QBER_end' in 'QBER_step' increments.
@@ -69,16 +96,12 @@ struct config_data
     // 1.   SPA with linear approximation of tanh and atanh functions.
     // 2.   NMSA (Normalized Min-Sum Algorithm) with α-factor.
     // 3.   OMSA (Offset Min-Sum Algorithm) with β-factor.
+    // 4.   ANMSA (Adaptive Normalized Min-Sum Algorithm) with α-factor (0 < α =< 1) and 𝜈-factor (0 < 𝜈 =< 1).
+    // 5.   AOMSA (Adaptive Offset Min-Sum Algorithm) with β-factor (0 < β =< 1) and 𝜍-factor (0 < 𝜍).
     size_t DECODING_ALGORITHM{};
 
-    // When using NMSA (or OMSA) for all matrices, alpha (or beta) values will be generated based on the range specified by 'SCALING_FACTOR_RANGE'.
-    bool USE_SCALING_FACTOR_RANGE{};
-
-    // Alpha (or beta) range for all matrices, specified using 'begin', 'end' and 'step'.
-    scaling_factor_range SCALING_FACTOR_RANGE{};
-
-    // Code rate and alpha (or beta) correspondence set.
-    std::vector<R_scaling_factor_map> R_SCALING_FACTOR_MAPS{};
+    // Parameters specifying scaling factors for parity-check matrices when using NMSA, OMSA, ANMSA and AOMSA algorithms.
+    algorithm_params DECODING_ALG_PARAMS{};
 
     // The maximum number of iterations of the decoding algorithm.
     // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.
@@ -124,4 +147,11 @@ struct config_data
 extern config_data CFG;
 const double EPSILON = 1e-6;
 
-config_data get_config_data(fs::path config_path);
+inline constexpr size_t SPA = 0, SPA_APPROX = 1, NMSA = 2, OMSA = 3, ANMSA = 4, AOMSA = 5;
+inline constexpr size_t DENSE_MAT = 0, SPARSE_MAT_ALIST = 1, SPARSE_MAT_1 = 2, SPARSE_MAT_2 = 3;
+
+scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range);
+
+std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps, const std::string& key);
+
+config_data parse_config_data(fs::path config_path);

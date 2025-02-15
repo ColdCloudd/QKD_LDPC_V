@@ -11,7 +11,7 @@
         "consider_RTT": true,
         "RTT": 20
     },
-    "decoding_algorithm": 0,
+    "decoding_algorithm": 1,
     "min_sum_normalized_parameters":
     {
         "use_alpha_range": false,

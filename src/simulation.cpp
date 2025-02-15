@@ -1,45 +1,58 @@
 #include "simulation.hpp"
 
-// Custom locale settings
-class custom_numpunct : public std::numpunct<char> 
-{
-protected:
-    char do_decimal_point() const override 
-    {
-        return ','; 
-    }
-
-    std::string do_grouping() const override 
-    {
-        return ""; 
-    }
-};
-
 // Records the results of the simulation in a ".csv" format file
 void write_file(const std::vector<sim_result> &data,
                 fs::path directory)
 {
+    // Custom locale settings
+    class custom_numpunct : public std::numpunct<char> 
+    {
+        protected:
+            char do_decimal_point() const override 
+            {
+                return ','; 
+            }
+
+            std::string do_grouping() const override 
+            {
+                return ""; 
+            }
+    };
+
     try
     {
         if (!fs::exists(directory))
-        {
             fs::create_directories(directory);
-        }
-        std::string dec_alg_name;
-        std::string scaling_factor_name = "";
-        if (CFG.DECODING_ALGORITHM == 0) 
+
+        bool is_nmsa_omsa = false, is_anmsa_aomsa = false;
+        std::string dec_alg_name, scaling_factor_name = "";
+        if (CFG.DECODING_ALGORITHM == SPA) 
             dec_alg_name = "SPA";
-        else if (CFG.DECODING_ALGORITHM == 1) 
+        else if (CFG.DECODING_ALGORITHM == SPA_APPROX) 
             dec_alg_name = "SPA-LIN-APPROX";
-        else if (CFG.DECODING_ALGORITHM == 2) 
+        else if (CFG.DECODING_ALGORITHM == NMSA) 
         {
             dec_alg_name = "NMSA";
             scaling_factor_name = ";ALPHA";
+            is_nmsa_omsa = true;
         }
-        else
+        else if (CFG.DECODING_ALGORITHM == OMSA)
         {
             dec_alg_name = "OMSA";
             scaling_factor_name = ";BETA";
+            is_nmsa_omsa = true;
+        }
+        else if (CFG.DECODING_ALGORITHM == ANMSA) 
+        {
+            dec_alg_name = "ANMSA";
+            scaling_factor_name = ";ALPHA;NU";
+            is_anmsa_aomsa = true;
+        }
+        else if (CFG.DECODING_ALGORITHM == AOMSA)
+        {
+            dec_alg_name = "AOMSA";
+            scaling_factor_name = ";BETA;SIGMA";
+            is_anmsa_aomsa = true;
         }
         
         std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",decoding_alg=" + 
@@ -67,8 +80,18 @@ void write_file(const std::vector<sim_result> &data,
         fout << "#;MATRIX_FILENAME;TYPE;CODE_RATE;M;N;QBER;ITERATIONS_SUCCESSFUL_DEC_ALG_MEAN;ITERATIONS_SUCCESSFUL_DEC_ALG_STD_DEV;ITERATIONS_SUCCESSFUL_DEC_ALG_MIN;ITERATIONS_SUCCESSFUL_DEC_ALG_MAX;" << 
         "RATIO_TRIALS_SUCCESSFUL_DEC_ALG;RATIO_TRIALS_SUCCESSFUL_LDPC;FER" << (CFG.ENABLE_THROUGHPUT_MEASUREMENT ? ";THROUGHPUT_MEAN;THROUGHPUT_STD_DEV;THROUGHPUT_MIN;THROUGHPUT_MAX" : "") << 
         scaling_factor_name << "\n";
+
+        std::string prim_scal_fact_val = "", sec_scal_fact_val = "";
         for (size_t i = 0; i < data.size(); i++)
         {
+            if (is_nmsa_omsa)
+                prim_scal_fact_val = (";" + std::to_string(data[i].scaling_factors.primary));
+            else if (is_anmsa_aomsa)
+            {
+                prim_scal_fact_val = (";" + std::to_string(data[i].scaling_factors.primary));
+                sec_scal_fact_val = (";" + std::to_string(data[i].scaling_factors.secondary));
+            }
+            
             fout << data[i].sim_number << ";" << data[i].matrix_filename << ";" << (data[i].is_regular ? "regular" : "irregular") << ";" 
                  << 1. - (static_cast<double>(data[i].num_check_nodes) / data[i].num_bit_nodes) << ";" << data[i].num_check_nodes << ";" 
                  << data[i].num_bit_nodes << ";" << data[i].initial_QBER << ";" << data[i].iter_success_dec_alg_mean << ";" 
@@ -77,8 +100,7 @@ void write_file(const std::vector<sim_result> &data,
                  << data[i].ratio_trials_success_ldpc << ";" << 1. - data[i].ratio_trials_success_ldpc 
                  << (CFG.ENABLE_THROUGHPUT_MEASUREMENT ? (";" + std::to_string(data[i].throughput_mean) + ";"
                  + std::to_string(data[i].throughput_std_dev) + ";" + std::to_string(data[i].throughput_min) + ";"
-                 + std::to_string(data[i].throughput_max)):"") 
-                 << ((CFG.DECODING_ALGORITHM == 2 || CFG.DECODING_ALGORITHM == 3) ? (";" + std::to_string(data[i].scaling_factor)):"") << "\n";
+                 + std::to_string(data[i].throughput_max)):"") << prim_scal_fact_val << sec_scal_fact_val << "\n";
         }
         fout.close();
     }
@@ -122,14 +144,12 @@ std::vector<double> get_rate_based_QBER_range(const double code_rate,
     return QBER;
 }
 
-// Get all alpha (or beta) range values used for all matrices regardless of their code rate(R).
+// Get all scaling factor range values used for all matrices regardless of their code rate(R).
 std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &scaling_factor_range)
 {
     std::vector<double> scaling_factors;
     if (scaling_factor_range.begin == scaling_factor_range.end)   // Use only one specified value.
-    {
         scaling_factors.push_back(scaling_factor_range.begin);
-    }
     else
     {
         size_t steps = static_cast<size_t>(round((scaling_factor_range.end - scaling_factor_range.begin) / scaling_factor_range.step)) + 1;   // including 'end' value 
@@ -140,13 +160,12 @@ std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &
     }
 
     if (scaling_factors.empty())
-    {
-        throw std::runtime_error("An error occurred while generating vector of alpha (or beta) values.");
-    }
+        throw std::runtime_error("An error occurred while generating vector of scaling factor values.");
+
     return scaling_factors;
 }
 
-// Get alpha (or beta) value based on code rate of matrix. R_scaling_factor_maps must be sorted. Looks for the first of parameters
+// Get scaling factor value based on code rate of matrix. R_scaling_factor_maps must be sorted. Looks for the first of parameters
 // where the code rate is less than or equal to the specified rate.
 double get_rate_based_scaling_factor_value(const double code_rate,
                                            const std::vector<R_scaling_factor_map> &R_scaling_factor_maps)
@@ -161,9 +180,8 @@ double get_rate_based_scaling_factor_value(const double code_rate,
         }
     }
     if (scaling_factor == -1.)
-    {
-        throw std::runtime_error("An error occurred while searching alpha (or beta) value on the basis of code rate(R).");
-    }
+        throw std::runtime_error("An error occurred while searching scaling factor value on the basis of code rate(R).");
+
     return scaling_factor;
 }
 
@@ -174,13 +192,13 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
     std::vector<fs::path> matrix_paths = get_file_paths_in_directory(matrix_dir_path);
     fs::path matrix_path = select_matrix_file(matrix_paths);
 
-    if (CFG.MATRIX_FORMAT == 0)
+    if (CFG.MATRIX_FORMAT == DENSE_MAT)
         matrix = read_dense_matrix(matrix_path);
-    else if (CFG.MATRIX_FORMAT == 1)
+    else if (CFG.MATRIX_FORMAT == SPARSE_MAT_ALIST)
         matrix = read_sparse_matrix_alist(matrix_path);
-    else if (CFG.MATRIX_FORMAT == 2)
+    else if (CFG.MATRIX_FORMAT == SPARSE_MAT_1)
         matrix = read_sparse_matrix_1(matrix_path);
-    else if (CFG.MATRIX_FORMAT == 3)
+    else if (CFG.MATRIX_FORMAT == SPARSE_MAT_2)
         matrix = read_sparse_matrix_2(matrix_path);
 
     fmt::print(fg(fmt::color::green), "{}\n", ((matrix.is_regular) ? "Matrix H is regular." : "Matrix H is irregular."));
@@ -195,24 +213,44 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
     double code_rate = 1. - static_cast<double>(num_check_nodes) / static_cast<double>(num_bit_nodes);
     std::vector<double> QBER = get_rate_based_QBER_range(code_rate, CFG.R_QBER_MAPS);
     
-    double scaling_factor{};
-    if (CFG.DECODING_ALGORITHM == 0)
+    decoding_scaling_factors scaling_factors{};
+    if (CFG.DECODING_ALGORITHM == SPA)
     {
-        fmt::print(fg(fmt::color::green), "{}\n\n", ("Sum-product decoding algorithm selected." ));
+        fmt::print(fg(fmt::color::green), "Sum-product decoding algorithm selected.\n\n");
     }
-    else if (CFG.DECODING_ALGORITHM == 1)
+    else if (CFG.DECODING_ALGORITHM == SPA_APPROX)
     {
-        fmt::print(fg(fmt::color::green), "{}\n\n", ("Sum-product decoding algorithm with linear approximation of tanh and atanh selected."));
-    }
-    else if (CFG.DECODING_ALGORITHM == 2)
-    {
-        scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.R_SCALING_FACTOR_MAPS);
-        fmt::print(fg(fmt::color::green), "{}\n\n", ("Min-sum normalized decoding algorithm selected. Alpha = " + std::to_string(scaling_factor)));
+        fmt::print(fg(fmt::color::green), "Sum-product decoding algorithm with linear approximation of tanh and atanh selected.\n\n");
     }
     else
     {
-        scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.R_SCALING_FACTOR_MAPS);
-        fmt::print(fg(fmt::color::green), "{}\n\n", ("Min-sum offset decoding algorithm selected. Beta = " + std::to_string(scaling_factor)));
+        if (CFG.DECODING_ALG_PARAMS.primary.use_range || CFG.DECODING_ALG_PARAMS.secondary.use_range)
+            throw std::runtime_error("Scaling factor ranges are not available in the interactive simulation. Use code rate and scaling factor correspondences!");
+        
+        if (CFG.DECODING_ALGORITHM == NMSA)
+        {
+            scaling_factors.primary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+            fmt::print(fg(fmt::color::green), "Min-sum normalized decoding algorithm selected. Alpha = {}\n\n", std::to_string(scaling_factors.primary));
+        }
+        else if (CFG.DECODING_ALGORITHM == OMSA)
+        {
+            scaling_factors.primary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+            fmt::print(fg(fmt::color::green), "Min-sum offset decoding algorithm selected. Beta = {}\n\n", std::to_string(scaling_factors.primary));
+        }
+        else if (CFG.DECODING_ALGORITHM == ANMSA)
+        {
+            scaling_factors.primary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+            scaling_factors.secondary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.secondary.maps);
+            fmt::print(fg(fmt::color::green), "Adaptive min-sum normalized decoding algorithm selected. Alpha = {}, Nu = {}\n\n", 
+                std::to_string(scaling_factors.primary), std::to_string(scaling_factors.secondary));
+        }
+        else if (CFG.DECODING_ALGORITHM == AOMSA)
+        {
+            scaling_factors.primary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+            scaling_factors.secondary = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.secondary.maps);
+            fmt::print(fg(fmt::color::green), "Adaptive min-sum offset decoding algorithm selected. Beta = {}, Sigma = {}\n\n", 
+                std::to_string(scaling_factors.primary), std::to_string(scaling_factors.secondary));
+        }
     }
 
     for (size_t i = 0; i < QBER.size(); ++i)
@@ -224,9 +262,7 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
         fmt::print(fg(fmt::color::green), "Actual QBER: {}\n", initial_QBER);
 
         if (initial_QBER == 0.)
-        {
             throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
-        }
 
         int error_num = 0;
         for (size_t i = 0; i < num_bit_nodes; ++i)
@@ -236,8 +272,8 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
         fmt::print(fg(fmt::color::green), "Number of errors in a key: {}\n", error_num);
 
         LDPC_result try_result;
-        if (CFG.DECODING_ALGORITHM == 2 || CFG.DECODING_ALGORITHM == 3)
-            try_result = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, initial_QBER, scaling_factor);
+        if (CFG.DECODING_ALGORITHM > SPA_APPROX)
+            try_result = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, initial_QBER, scaling_factors);
         else 
             try_result = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, initial_QBER);
 
@@ -252,30 +288,56 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
     std::vector<sim_input> sim_inputs(matrix_paths.size());
     for (size_t i = 0; i < matrix_paths.size(); i++)
     {
-        if (CFG.MATRIX_FORMAT == 0)
+        if (CFG.MATRIX_FORMAT == DENSE_MAT)
             sim_inputs[i].matrix = read_dense_matrix(matrix_paths[i]);
-        else if (CFG.MATRIX_FORMAT == 1)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_ALIST)
             sim_inputs[i].matrix = read_sparse_matrix_alist(matrix_paths[i]);
-        else if (CFG.MATRIX_FORMAT == 2)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_1)
             sim_inputs[i].matrix = read_sparse_matrix_1(matrix_paths[i]);
-        else if (CFG.MATRIX_FORMAT == 3)
+        else if (CFG.MATRIX_FORMAT == SPARSE_MAT_2)
             sim_inputs[i].matrix = read_sparse_matrix_2(matrix_paths[i]);
 
         sim_inputs[i].matrix_path = matrix_paths[i];
 
         double code_rate = 1. - static_cast<double>(sim_inputs[i].matrix.check_nodes.size()) / static_cast<double>(sim_inputs[i].matrix.bit_nodes.size());
         sim_inputs[i].QBER = get_rate_based_QBER_range(code_rate, CFG.R_QBER_MAPS);
-
-        if (CFG.DECODING_ALGORITHM == 2 || CFG.DECODING_ALGORITHM == 3)
+        
+        if (CFG.DECODING_ALGORITHM == NMSA || CFG.DECODING_ALGORITHM == OMSA)
         {
-            if (CFG.USE_SCALING_FACTOR_RANGE)
-            {
-                sim_inputs[i].scaling_factor = get_scaling_factor_range_values(CFG.SCALING_FACTOR_RANGE);
-            }
+            if (CFG.DECODING_ALG_PARAMS.primary.use_range)
+                sim_inputs[i].primary_scaling_factor = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.primary.range);
             else
             {
-                double scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.R_SCALING_FACTOR_MAPS);
-                sim_inputs[i].scaling_factor.push_back(scaling_factor);   // Contains only one value.
+                double scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+                sim_inputs[i].primary_scaling_factor.push_back(scaling_factor);   // Contains only one value.
+            }
+        }
+        else if (CFG.DECODING_ALGORITHM == ANMSA || CFG.DECODING_ALGORITHM == AOMSA)
+        {
+            double scaling_factor;
+            if (CFG.DECODING_ALG_PARAMS.primary.use_range && CFG.DECODING_ALG_PARAMS.secondary.use_range)           // Use only ranges.
+            {
+                sim_inputs[i].primary_scaling_factor = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.primary.range);
+                sim_inputs[i].secondary_scaling_factor = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.secondary.range);
+            }
+            else if (CFG.DECODING_ALG_PARAMS.primary.use_range && !CFG.DECODING_ALG_PARAMS.secondary.use_range)     // Primary scaling factor - range, secondary - map.
+            {
+                sim_inputs[i].primary_scaling_factor = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.primary.range);
+                scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.secondary.maps);
+                sim_inputs[i].secondary_scaling_factor.push_back(scaling_factor); 
+            }
+            else if (!CFG.DECODING_ALG_PARAMS.primary.use_range && CFG.DECODING_ALG_PARAMS.secondary.use_range)     // Primary scaling factor - map, secondary - range.
+            {
+                scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+                sim_inputs[i].primary_scaling_factor.push_back(scaling_factor);
+                sim_inputs[i].secondary_scaling_factor = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.secondary.range);
+            }
+            else    // Use only maps.
+            {
+                scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
+                sim_inputs[i].primary_scaling_factor.push_back(scaling_factor);
+                scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.secondary.maps);
+                sim_inputs[i].secondary_scaling_factor.push_back(scaling_factor);   
             }
         }
     }
@@ -286,7 +348,7 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
 trial_result run_trial(const H_matrix &matrix, 
                        double QBER, 
                        size_t seed,
-                       const double &scaling_factor)
+                       const decoding_scaling_factors &scaling_factors)
 {
     trial_result result;
     XoshiroCpp::Xoshiro256PlusPlus prng(seed);
@@ -297,21 +359,17 @@ trial_result run_trial(const H_matrix &matrix,
     fill_random_bits(prng, alice_bit_array);
     result.initial_QBER = introduce_errors(prng, alice_bit_array, QBER, bob_bit_array);
     if (result.initial_QBER == 0.)
-    {
         throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
-    }
 
     if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
     {
         auto start = std::chrono::high_resolution_clock::now();
-        result.ldpc_res = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, result.initial_QBER, scaling_factor);
+        result.ldpc_res = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, result.initial_QBER, scaling_factors);
         auto end = std::chrono::high_resolution_clock::now();
         result.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     }
     else
-    {
-        result.ldpc_res = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, result.initial_QBER, scaling_factor);
-    }
+        result.ldpc_res = QKD_LDPC(matrix, alice_bit_array, bob_bit_array, result.initial_QBER, scaling_factors);
 
     return result;
 }
@@ -336,17 +394,11 @@ void process_trials_results(const std::vector<trial_result> &trial_results,
             trials_successful_decoding++;
             curr_decoding_iterations_num = trial_results[i].ldpc_res.decoding_res.iterations_num;
             if (iter_success_dec_alg_max < curr_decoding_iterations_num)
-            {
                 iter_success_dec_alg_max = curr_decoding_iterations_num;
-            }
             if (iter_success_dec_alg_min > curr_decoding_iterations_num)
-            {
                 iter_success_dec_alg_min = curr_decoding_iterations_num;
-            }
             if (trial_results[i].ldpc_res.keys_match)
-            {
                 trials_successful_ldpc++;
-            }
 
             iter_success_dec_alg_mean += static_cast<double>(curr_decoding_iterations_num);
         }
@@ -386,19 +438,13 @@ void process_trials_results(const std::vector<trial_result> &trial_results,
                 (static_cast<double>(trial_results[i].runtime.count()) + static_cast<double>(CFG.RTT) * MICROSECONDS_IN_MILLISECOND);  // bits/s
             }
             else
-            {
                 curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[i].runtime.count());  // bits/s
-            }
             
             throughput_mean += curr_throughput;
             if (curr_throughput > throughput_max)
-            {
                 throughput_max = curr_throughput;
-            }
             if (curr_throughput < throughput_min)
-            {
                 throughput_min = curr_throughput;
-            }
         }
         throughput_mean /= static_cast<double>(CFG.TRIALS_NUMBER);
         
@@ -410,9 +456,8 @@ void process_trials_results(const std::vector<trial_result> &trial_results,
                 (static_cast<double>(trial_results[i].runtime.count()) + static_cast<double>(CFG.RTT) * MICROSECONDS_IN_MILLISECOND);  // bits/s
             }
             else
-            {
                 curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[i].runtime.count());  // bits/s
-            }
+
             throughput_std_dev += pow((curr_throughput - throughput_mean), 2);
         }
         throughput_std_dev /= static_cast<double>(CFG.TRIALS_NUMBER);
@@ -438,10 +483,16 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
 {
     using namespace indicators;
     size_t sim_total = 0;
+
+    const bool is_nmsa_omsa = (CFG.DECODING_ALGORITHM == NMSA || CFG.DECODING_ALGORITHM == OMSA);
+    const bool is_anmsa_aomsa = (CFG.DECODING_ALGORITHM == ANMSA || CFG.DECODING_ALGORITHM == AOMSA);
+
     for (size_t i = 0; i < sim_in.size(); ++i)
     {     
-        if (CFG.DECODING_ALGORITHM == 2 || CFG.DECODING_ALGORITHM == 3)
-            sim_total += sim_in[i].QBER.size() * sim_in[i].scaling_factor.size();    // For each QBER value, tests are performed with all alpha (or beta) values from the vector
+        if (is_nmsa_omsa)
+            sim_total += sim_in[i].QBER.size() * sim_in[i].primary_scaling_factor.size();    // For each QBER value, tests are performed with all alpha (or beta) values from the vector
+        else if (is_anmsa_aomsa)
+            sim_total += sim_in[i].QBER.size() * sim_in[i].primary_scaling_factor.size() * sim_in[i].secondary_scaling_factor.size();     // Each scaling factor (alpha or beta) from primary with each scaling factor (nu or sigma) from secondary 
         else
             sim_total += sim_in[i].QBER.size();     // For each matrix, keys are generated with error rates given in the QBER vector
     }
@@ -457,6 +508,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
 
     size_t curr_sim = 0;
     size_t iteration = 0;
+    decoding_scaling_factors scaling_factors{};
     std::vector<sim_result> sim_results(sim_total);
     std::vector<trial_result> trial_results(CFG.TRIALS_NUMBER);
 
@@ -479,12 +531,11 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
         for (size_t j = 0; j < sim_in[i].QBER.size(); ++j)
         {
             double QBER = sim_in[i].QBER[j];
-
-            if (CFG.DECODING_ALGORITHM == 2 || CFG.DECODING_ALGORITHM == 3)
+            if (is_nmsa_omsa)
             {
-                for (size_t k = 0; k < sim_in[i].scaling_factor.size(); ++k)
+                for (size_t k = 0; k < sim_in[i].primary_scaling_factor.size(); ++k)
                 {
-                    double scaling_factor = sim_in[i].scaling_factor[k];
+                    scaling_factors.primary = sim_in[i].primary_scaling_factor[k];
 
                     iteration += CFG.TRIALS_NUMBER;
                     bar.set_option(option::PostfixText{
@@ -492,9 +543,9 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
 
                     // TRIALS_NUMBER of trials are performed with each combination to calculate the mean values
                     pool.detach_loop<size_t>(0, CFG.TRIALS_NUMBER,
-                                            [&matrix, &QBER, &scaling_factor, &trial_results, &seeds, &curr_sim, &bar](size_t n)
+                                            [&matrix, &QBER, &scaling_factors, &trial_results, &seeds, &curr_sim, &bar](size_t n)
                                             {
-                                                trial_results[n] = run_trial(matrix, QBER, (seeds[n] + curr_sim), scaling_factor);
+                                                trial_results[n] = run_trial(matrix, QBER, (seeds[n] + curr_sim), scaling_factors);
                                                 bar.tick(); // For correct time estimation
                                             });
                     pool.wait();
@@ -505,10 +556,45 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
                     sim_results[curr_sim].num_bit_nodes = num_bit_nodes;
                     sim_results[curr_sim].num_check_nodes = num_check_nodes;
                     sim_results[curr_sim].initial_QBER = trial_results[0].initial_QBER;
-                    sim_results[curr_sim].scaling_factor = scaling_factor;
+                    sim_results[curr_sim].scaling_factors = scaling_factors;
 
                     process_trials_results(trial_results, num_bit_nodes, num_check_nodes, sim_results[curr_sim]);
                     ++curr_sim;
+                }
+            }
+            else if (is_anmsa_aomsa)
+            {
+                for (size_t k = 0; k < sim_in[i].primary_scaling_factor.size(); ++k)
+                {
+                    scaling_factors.primary = sim_in[i].primary_scaling_factor[k];
+                    for (size_t l = 0; l < sim_in[i].secondary_scaling_factor.size(); ++l)
+                    {
+                        scaling_factors.secondary = sim_in[i].secondary_scaling_factor[l];
+
+                        iteration += CFG.TRIALS_NUMBER;
+                        bar.set_option(option::PostfixText{
+                            std::to_string(iteration) + "/" + std::to_string(trials_total)});
+
+                        // TRIALS_NUMBER of trials are performed with each combination to calculate the mean values
+                        pool.detach_loop<size_t>(0, CFG.TRIALS_NUMBER,
+                                                [&matrix, &QBER, &scaling_factors, &trial_results, &seeds, &curr_sim, &bar](size_t n)
+                                                {
+                                                    trial_results[n] = run_trial(matrix, QBER, (seeds[n] + curr_sim), scaling_factors);
+                                                    bar.tick(); // For correct time estimation
+                                                });
+                        pool.wait();
+
+                        sim_results[curr_sim].sim_number = curr_sim;
+                        sim_results[curr_sim].matrix_filename = matrix_filename;
+                        sim_results[curr_sim].is_regular = matrix.is_regular;
+                        sim_results[curr_sim].num_bit_nodes = num_bit_nodes;
+                        sim_results[curr_sim].num_check_nodes = num_check_nodes;
+                        sim_results[curr_sim].initial_QBER = trial_results[0].initial_QBER;
+                        sim_results[curr_sim].scaling_factors = scaling_factors;
+
+                        process_trials_results(trial_results, num_bit_nodes, num_check_nodes, sim_results[curr_sim]);
+                        ++curr_sim;
+                    }
                 }
             }
             else

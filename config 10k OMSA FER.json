@@ -2,7 +2,7 @@
     "threads_number": 16,
     "trials_number": 100000,
     "use_config_simulation_seed": true,
-    "simulation_seed": 11012025,
+    "simulation_seed": 11022025,
     "interactive_mode": false,
     "enable_privacy_maintenance": false,
     "enable_throughput_measurement": false,
@@ -11,16 +11,23 @@
         "consider_RTT": true,
         "RTT": 20
     },
-    "use_min_sum_normalized_algorithm": true,
+    "decoding_algorithm": 3,
     "min_sum_normalized_parameters":
     {
         "use_alpha_range": false,
         "alpha_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
         "code_rate_alpha_maps":
         [
-            {"code_rate": 0.365, "alpha": 0.8},
-            {"code_rate": 0.575, "alpha": 0.8},
             {"code_rate": 0.925, "alpha": 0.65}
+        ]
+    },
+    "min_sum_offset_parameters":
+    {
+        "use_beta_range": false,
+        "beta_range": {"begin": 0.01, "end": 1.0, "step": 0.01},
+        "code_rate_beta_maps":
+        [
+            {"code_rate": 0.575, "beta": 0.5}
         ]
     },
     "decoding_algorithm_max_iterations": 100,
@@ -32,8 +39,6 @@
     "decoding_algorithm_msg_llr_threshold": 100.0,
     "code_rate_QBER_maps": 
     [
-        {"code_rate": 0.365, "QBER_begin": 0.117, "QBER_end": 0.132, "QBER_step": 0.0005},
-        {"code_rate": 0.575, "QBER_begin": 0.058, "QBER_end": 0.07, "QBER_step": 0.0005},
-        {"code_rate": 0.925, "QBER_begin": 0.004, "QBER_end": 0.008, "QBER_step": 0.0005}
+        {"code_rate": 0.575, "QBER_begin": 0.058, "QBER_end": 0.07, "QBER_step": 0.0005}
     ]
 }
