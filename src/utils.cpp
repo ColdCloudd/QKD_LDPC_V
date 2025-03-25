@@ -27,15 +27,14 @@ std::vector<fs::path> get_file_paths_in_directory(const fs::path &directory_path
             for (const auto &entry : fs::directory_iterator(directory_path))
             {
                 if (fs::is_regular_file(entry.path()))
-                {
                     file_paths.push_back(entry.path());
-                }
             }
         }
         else
-        {
             throw std::runtime_error("Directory doesn't exist.");
-        }
+            
+        if (file_paths.empty())
+            throw std::runtime_error("No files in the directory.");
     }
     catch (const std::exception &e)
     {

@@ -1087,6 +1087,10 @@ LDPC_result QKD_LDPC(const H_matrix &matrix,
 
     if (CFG.TRACE_QKD_LDPC)
     {
+        fmt::print(fg(fmt::color::blue), "\nAlice bit array:\n");
+        print_array(alice_bit_array);
+        fmt::print(fg(fmt::color::blue), "\nBob bit array with errors:\n");
+        print_array(bob_bit_array);
         fmt::print(fg(fmt::color::blue), "\nr:\n");
         print_array(apriori_llr);
         fmt::print(fg(fmt::color::blue), "\nAlice syndrome:\n");

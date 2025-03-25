@@ -1,8 +1,8 @@
 {
     "threads_number": 1,
-    "trials_number": 50000,
+    "trials_number": 30000,
     "use_config_simulation_seed": true,
-    "simulation_seed": 7777,
+    "simulation_seed": 777,
     "interactive_mode": false,
     "enable_privacy_maintenance": false,
     "enable_throughput_measurement": false,
@@ -11,7 +11,7 @@
         "consider_RTT": true,
         "RTT": 20
     },
-    "decoding_algorithm": 3,
+    "decoding_algorithm": 0,
     "min_sum_normalized_parameters":
     {
         "use_alpha_range": false,
@@ -69,6 +69,6 @@
     "decoding_algorithm_msg_llr_threshold": 100.0,
     "code_rate_QBER_maps": 
     [
-        {"code_rate": 0.705, "QBER_begin": 0.041, "QBER_end": 0.041, "QBER_step": 0.0005}
+        {"code_rate": 0.705, "QBER_begin": 0.044, "QBER_end": 0.044, "QBER_step": 0.0005}
     ]
 }

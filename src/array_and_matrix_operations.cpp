@@ -226,9 +226,9 @@ H_matrix read_sparse_matrix_alist(const fs::path &matrix_path)
     std::vector<std::vector<int>> vec_int;
     try
     {
-        for (const auto &line : line_vec)
+        for (const auto &l : line_vec)
         {
-            std::istringstream iss(line);
+            std::istringstream iss(l);
             std::vector<int> numbers;
             int number;
             while (iss >> number)
@@ -415,9 +415,9 @@ H_matrix read_sparse_matrix_1(const fs::path &matrix_path)
     std::vector<std::vector<int>> vec_int;
     try
     {
-        for (const auto &line : line_vec)
+        for (const auto &l : line_vec)
         {
-            std::istringstream iss(line);
+            std::istringstream iss(l);
             std::vector<int> numbers;
             int number;
             while (iss >> number)
@@ -565,9 +565,9 @@ H_matrix read_sparse_matrix_2(const fs::path &matrix_path)
     std::vector<std::vector<int>> vec_int;
     try
     {
-        for (const auto &line : line_vec)
+        for (const auto &l : line_vec)
         {
-            std::istringstream iss(line);
+            std::istringstream iss(l);
             std::vector<int> numbers;
             int number;
             while (iss >> number)
@@ -707,9 +707,9 @@ H_matrix read_dense_matrix(const fs::path &matrix_path)
     std::vector<std::vector<int8_t>> dense_matrix;
     try
     {
-        for (const auto &line : line_vec)
+        for (const auto &l : line_vec)
         {
-            std::istringstream iss(line);
+            std::istringstream iss(l);
             std::vector<int8_t> numbers;
             int number;
             while (iss >> number)
@@ -754,9 +754,9 @@ H_matrix read_dense_matrix(const fs::path &matrix_path)
         {
             curr_weight += dense_matrix[j][i];
         }
-        if (curr_weight <= 0)
+        if (curr_weight == 0)
         {
-            throw std::runtime_error("Column '" + std::to_string(i + 1) + "' weight cannot be equal to or less than zero. File: " + matrix_path.string());
+            throw std::runtime_error("Column '" + std::to_string(i + 1) + "' weight cannot be equal to zero. File: " + matrix_path.string());
         }
         bit_nodes_weight[i] = static_cast<int>(curr_weight);
         if (curr_weight > max_col_weight)
@@ -770,9 +770,9 @@ H_matrix read_dense_matrix(const fs::path &matrix_path)
     for (size_t i = 0; i < row_num; i++)
     {
         curr_weight = accumulate(dense_matrix[i].begin(), dense_matrix[i].end(), 0);
-        if (curr_weight <= 0)
+        if (curr_weight == 0)
         {
-            throw std::runtime_error("Row '" + std::to_string(i + 1) + "' weight cannot be equal to or less than zero. File: " + matrix_path.string());
+            throw std::runtime_error("Row '" + std::to_string(i + 1) + "' weight cannot be equal to zero. File: " + matrix_path.string());
         }
         check_nodes_weight[i] = static_cast<int>(curr_weight);
         if (curr_weight > max_row_weight)

@@ -91,7 +91,7 @@ struct config_data
     // RTT (Round-Trip Time) in milliseconds.
     size_t RTT{};
 
-    // Four options:
+    // Options:
     // 0.   SPA (Sum-Product Algorithm).
     // 1.   SPA with linear approximation of tanh and atanh functions.
     // 2.   NMSA (Normalized Min-Sum Algorithm) with α-factor.
@@ -104,24 +104,23 @@ struct config_data
     algorithm_params DECODING_ALG_PARAMS{};
 
     // The maximum number of iterations of the decoding algorithm.
-    // If the maximum number of iterations is reached, error reconciliation in the key is considered unsuccessful.
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
     // Four options:
     // 0.   Dense matrices (folder dense_matrices).
-    // 1.   Sparse matrices in '.alist' format (folder sparse_matrices_alist).
+    // 1.   Sparse matrices in 'alist' format (folder sparse_matrices_alist).
+    //      About 'alist' format: https://rptu.de/channel-codes/matrix-file-formats.
     // 2.   Sparse matrices in format specified below (folder sparse_matrices_1).
-    // The first line contains the block length, N. The second line defines the number of parity-checks, M.
-    // The third line defines the number of columns of the compressed parity-check matrix. 
-    // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
-    // indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
-    // the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
+    //      The first line contains the block length, N. The second line defines the number of parity-checks, M.
+    //      The third line defines the number of columns of the compressed parity-check matrix. 
+    //      The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
+    //      indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
+    //      the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
     // 3.   Sparse matrices in format specified below (folder sparse_matrices_2).
-    // Read sparse matrix from file in format:
-    // The first line contains two numbers: the first is the block length (N) and the second is the number of parity-checks (M).
-    // The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
-    // indices (0 ... N-1) of 1's in the compressed row of parity-check matrix. 
-    // The next N lines contains the indices (0 ... M-1) of 1's in the compressed column of parity-check matrix.
+    //      The first line contains two numbers: the first is the block length (N) and the second is the number of parity-checks (M).
+    //      The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
+    //      indices (0 ... N-1) of 1's in the compressed row of parity-check matrix. 
+    //      The next N lines contains the indices (0 ... M-1) of 1's in the compressed column of parity-check matrix.
     size_t MATRIX_FORMAT{};
 
     // Output intermediate results of LDPC operation to the console.
@@ -133,11 +132,11 @@ struct config_data
     // Console output of maximum log likelihood ratios (LLR) values of the message during the decoding algorithm.
     bool TRACE_DECODING_ALG_LLR{};
 
-    // Enables limitation on the maximum LLR value of the message, which cannot exceed the set threshold. 
+    // Enables limitation on the maximum LLR value of the message.
     // If the set threshold is exceeded, the value is set equal to DECODING_ALG_MSG_LLR_THRESHOLD.
     bool ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD{};
 
-    // The maximum LLR value a message can have.
+    // The LLR value to which the message value is limited.
     double DECODING_ALG_MSG_LLR_THRESHOLD{};
 
     // Code rate and QBER correspondence set.
@@ -152,6 +151,11 @@ inline constexpr size_t DENSE_MAT = 0, SPARSE_MAT_ALIST = 1, SPARSE_MAT_1 = 2, S
 
 scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range);
 
-std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps, const std::string& key);
+std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps,
+                                                            const std::string& key);
+
+void print_config_info(config_data cfg, 
+                       std::string cfg_name,
+                       size_t cfg_number);
 
 config_data parse_config_data(fs::path config_path);

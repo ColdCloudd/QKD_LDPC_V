@@ -18,7 +18,8 @@ scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range
     return {begin, end, step};
 }
 
-std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps, const std::string& key) 
+std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps,
+                                                            const std::string& key) 
 {
     std::vector<R_scaling_factor_map> maps;
     double code_rate;
@@ -46,11 +47,47 @@ std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_
     return maps;
 }
 
+void print_config_info(config_data cfg, 
+                       std::string cfg_name,
+                       size_t cfg_number)
+{
+    fmt::print(fg(fmt::color::yellow), "------------------------- CONFIG #{} INFO --------------------------\n", cfg_number);
+    fmt::print(fg(fmt::color::yellow), "Config name: {}\n", fmt::styled(cfg_name, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Simulation MODE: {}\n", fmt::styled(cfg.INTERACTIVE_MODE ? "INTERACTIVE" : "BATCH", fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Threads number: {}\n", fmt::styled(cfg.THREADS_NUMBER, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Trials number: {}\n", fmt::styled(cfg.TRIALS_NUMBER, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Simulation seed: {}\n", fmt::styled(cfg.SIMULATION_SEED, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Privacy maintenance: {}\n", fmt::styled((cfg.ENABLE_PRIVACY_MAINTENANCE ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Throughput measurement: {}\n", fmt::styled((cfg.ENABLE_THROUGHPUT_MEASUREMENT ? ("Enabled, RTT = " + std::to_string(cfg.RTT) + " ms") : "Disabled"), fg(fmt::color::crimson)));
+
+    std::string alg_name =
+        (cfg.DECODING_ALGORITHM == 0) ? "SPA" :
+        (cfg.DECODING_ALGORITHM == 1) ? "SPA (lin approx)" :
+        (cfg.DECODING_ALGORITHM == 2) ? "NMSA" :
+        (cfg.DECODING_ALGORITHM == 3) ? "OMSA" :
+        (cfg.DECODING_ALGORITHM == 4) ? "ANMSA" :
+        (cfg.DECODING_ALGORITHM == 5) ? "AOMSA" : "Unknown";
+    fmt::print(fg(fmt::color::yellow), "Decoding algorithm: {}\n", fmt::styled(alg_name, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Decoding algorithm maximum iterations: {}\n", fmt::styled(cfg.DECODING_ALG_MAX_ITERATIONS, fg(fmt::color::crimson)));
+
+    std::string mat_format =
+        (cfg.MATRIX_FORMAT == 0) ? "Dense" :
+        (cfg.MATRIX_FORMAT == 1) ? "Sparse (alist)" :
+        (cfg.MATRIX_FORMAT == 2) ? "Sparse (1)" :
+        (cfg.MATRIX_FORMAT == 3) ? "Sparse (2)" : "Unknown";
+    fmt::print(fg(fmt::color::yellow), "Parity-check matrix format: {}\n", fmt::styled(mat_format, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "--------------------------------------------------------------------\n");
+
+}
+
 // Reads user-defined configuration parameters from a .json file.
 config_data parse_config_data(fs::path config_path)
 {
     if (!fs::exists(config_path))
         throw std::runtime_error("Configuration file not found: " + config_path.string());
+
+    if (config_path.extension() != ".json")
+        throw std::runtime_error("Configuration file must have a .json extension: " + config_path.string());
 
     std::ifstream config_file(config_path);
     if (!config_file.is_open())

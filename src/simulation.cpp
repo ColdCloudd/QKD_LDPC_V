@@ -1,8 +1,9 @@
 #include "simulation.hpp"
 
 // Records the results of the simulation in a ".csv" format file
-void write_file(const std::vector<sim_result> &data,
-                fs::path directory)
+fs::path write_file(const std::vector<sim_result> &data,
+                    std::string sim_duration,
+                    fs::path directory)
 {
     // Custom locale settings
     class custom_numpunct : public std::numpunct<char> 
@@ -55,12 +56,12 @@ void write_file(const std::vector<sim_result> &data,
             is_anmsa_aomsa = true;
         }
         
-        std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",decoding_alg=" + 
-                               dec_alg_name + ",max_decoding_alg_iters=" +
-                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",privacy_maintenance=" + 
+        std::string base_filename  = "ldpc(trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ",dec_alg=" + 
+                               dec_alg_name + ",max_dec_alg_iters=" +
+                               std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ",priv_maint=" + 
                                ((CFG.ENABLE_PRIVACY_MAINTENANCE)?"on":"off") + 
                                ((CFG.ENABLE_THROUGHPUT_MEASUREMENT && CFG.CONSIDER_RTT)?(",RTT=" + std::to_string(CFG.RTT)):"") + 
-                               ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ")";
+                               ",seed=" + std::to_string(CFG.SIMULATION_SEED) + ",sim_duration=" + sim_duration + ")";
 
         std::string extension = ".csv";
         fs::path result_file_path = directory / (base_filename + extension);
@@ -103,6 +104,8 @@ void write_file(const std::vector<sim_result> &data,
                  + std::to_string(data[i].throughput_max)):"") << prim_scal_fact_val << sec_scal_fact_val << "\n";
         }
         fout.close();
+
+        return result_file_path;
     }
     catch (const std::exception &ex)
     {
@@ -265,9 +268,9 @@ void QKD_LDPC_interactive_simulation(fs::path matrix_dir_path)
             throw std::runtime_error("Key size '" + std::to_string(num_bit_nodes) + "' is too small for QBER.");
 
         int error_num = 0;
-        for (size_t i = 0; i < num_bit_nodes; ++i)
+        for (size_t j = 0; j < num_bit_nodes; ++j)
         {
-            error_num += alice_bit_array[i] ^ bob_bit_array[i];
+            error_num += alice_bit_array[j] ^ bob_bit_array[j];
         }
         fmt::print(fg(fmt::color::green), "Number of errors in a key: {}\n", error_num);
 
@@ -502,7 +505,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
     indicators::ProgressBar bar{
         option::BarWidth{50}, option::Start{" ["}, option::Fill{"="}, option::Lead{">"},
         option::Remainder{"-"}, option::End{"]"}, option::PrefixText{"PROGRESS"},
-        option::ForegroundColor{Color::green}, option::ShowElapsedTime{true},
+        option::ForegroundColor{Color::cyan}, option::ShowElapsedTime{true},
         option::ShowRemainingTime{true}, option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
         option::MaxProgress{trials_total}};
 

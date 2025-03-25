@@ -53,8 +53,9 @@ struct sim_result
     size_t throughput_std_dev{};
 };
 
-void write_file(const std::vector<sim_result> &data,
-                fs::path directory);
+fs::path write_file(const std::vector<sim_result> &data,
+                    std::string sim_duration,
+                    fs::path directory);
 
 std::vector<double> get_rate_based_QBER_range(const double code_rate,
                                               const std::vector<R_QBER_map> &R_QBER_maps);
