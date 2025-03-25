@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
                 auto hours = std::chrono::duration_cast<std::chrono::hours>(sim_end - sim_start);
                 auto minutes = std::chrono::duration_cast<std::chrono::minutes>(sim_end - sim_start - hours);
                 auto seconds = std::chrono::duration_cast<std::chrono::seconds>(sim_end - sim_start - hours - minutes);
-                std::string sim_duration = fmt::format("{:02}h:{:02}m:{:02}s", hours.count(), minutes.count(), seconds.count());
+                std::string sim_duration = fmt::format("{:02}h-{:02}m-{:02}s", hours.count(), minutes.count(), seconds.count());
             
                 fs::path result_file_path = write_file(sim_results, sim_duration, RESULTS_DIR_PATH);
                 fmt::print(fg(fmt::color::lawn_green), "The results are written to the file: {}{}\n\n", 
