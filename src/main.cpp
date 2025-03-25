@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         for (size_t i = 0; i < config_paths.size(); ++i)
         {
             CFG = parse_config_data(config_paths[i]);
-            print_config_info(CFG, config_paths[i].filename(), i + 1);
+            print_config_info(CFG, config_paths[i].filename().string(), i + 1);
             fs::path matrix_dir_path;
             if (CFG.MATRIX_FORMAT == DENSE_MAT)
                 matrix_dir_path = DENSE_MATRIX_DIR_PATH;
