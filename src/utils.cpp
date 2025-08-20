@@ -16,25 +16,32 @@ void print_array(const std::vector<double> &array)
     }
 }
 
-// Gets paths to files in the given directory.
-std::vector<fs::path> get_file_paths_in_directory(const fs::path &directory_path)
+// Gets paths to files with the specified extension in the specified directory.
+std::vector<fs::path> get_file_paths_in_directory(
+    const fs::path &directory_path,
+     const std::string &extension
+)
 {
     std::vector<fs::path> file_paths;
     try
     {
-        if (fs::exists(directory_path) && fs::is_directory(directory_path))
+        if (!fs::exists(directory_path))
+            throw std::runtime_error(fmt::format("Directory '{}' doesn't exist.", directory_path.string()));
+        if (!fs::is_directory(directory_path))
+            throw std::runtime_error(fmt::format("Path '{}' is not a directory.", directory_path.string()));
+
+        std::string ext = extension;
+        if (!ext.empty() && ext[0] != '.')
+            ext = "." + ext;
+
+        for (const auto &entry : fs::directory_iterator(directory_path))
         {
-            for (const auto &entry : fs::directory_iterator(directory_path))
-            {
-                if (fs::is_regular_file(entry.path()))
-                    file_paths.push_back(entry.path());
-            }
+            if (fs::is_regular_file(entry.path()) && entry.path().extension().string() == ext)
+                file_paths.push_back(entry.path());
         }
-        else
-            throw std::runtime_error("Directory doesn't exist.");
-            
+
         if (file_paths.empty())
-            throw std::runtime_error("No files in the directory.");
+            throw std::runtime_error(fmt::format("No files with extension '{}' in the directory '{}'.", extension, directory_path.string()));
     }
     catch (const std::exception &e)
     {
@@ -43,23 +50,4 @@ std::vector<fs::path> get_file_paths_in_directory(const fs::path &directory_path
     }
 
     return file_paths;
-}
-
-// Allow the user to select a matrix file from available paths
-fs::path select_matrix_file(const std::vector<fs::path> &matrix_paths)
-{
-    fmt::print(fg(fmt::color::green), "Choose file: \n");
-    for (size_t i = 0; i < matrix_paths.size(); i++)
-    {
-        fmt::print(fg(fmt::color::green), "{0}. {1}\n", i + 1, matrix_paths[i].filename().string());
-    }
-
-    int file_index;
-    std::cin >> file_index;
-    file_index -= 1;
-    if (file_index < 0 || file_index >= static_cast<int>(matrix_paths.size()))
-    {
-        throw std::runtime_error("Wrong file number.");
-    }
-    return matrix_paths[file_index];
 }

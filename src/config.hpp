@@ -27,7 +27,7 @@ struct R_scaling_factor_map
 };
 
 // Parameters for parity-check matrices when using NMSA, OMSA, ANMSA and AOMSA algorithms.
-struct algorithm_params 
+struct decoding_algorithm_params 
 {
     // Common parameters for NMSA, OMSA, ANMSA and AOMSA algorithms.
     struct 
@@ -49,8 +49,8 @@ struct algorithm_params
 // Structure for storing factors passed to NMSA, OMSA, ANMSA and AOMSA algorithms.
 struct decoding_scaling_factors
 {
-    double primary{};
-    double secondary{};
+    double primary{};       // Scaling factor applied in NMSA (α), OMSA (β), ANMSA (α) and AOMSA (β) decoding algorithms.
+    double secondary{};     // Scaling factor applied in ANMSA (𝜈) and AOMSA (𝜍) decoding algorithms.
 };
 
 // Structure that stores code rate value that correspond to a range of QBER values from 'QBER_begin' to 'QBER_end' in 'QBER_step' increments.
@@ -61,6 +61,28 @@ struct R_QBER_map
     double QBER_begin{};
     double QBER_end{};
     double QBER_step{};
+};
+
+// Structure that stores code rate value that correspond to a range of δ/f_EC values from 'delta_begin/efficiency_begin' 
+// to 'delta_end/efficiency_end' in 'delta_step/efficiency_step' increments.
+// If 'delta_begin/efficiency_begin'=='delta_end/efficiency_end', only one value is used and 'step' is not taken into account.
+// https://arxiv.org/pdf/1007.1616
+struct R_adaptation_parameters_map
+{
+    double code_rate{};
+    double delta_begin{};
+    double delta_end{};
+    double delta_step{};
+    double efficiency_begin{};
+    double efficiency_end{};
+    double efficiency_step{};
+};
+
+// Ranges of values for δ and f_EC for a specific code rate, calculated based on the structure 'R_adaptation_parameters_map'.
+struct R_adaptation_parameters_range
+{
+    std::vector<double> delta{};
+    std::vector<double> efficiency{};
 };
 
 struct config_data
@@ -74,10 +96,6 @@ struct config_data
     // Seed of simulation.
     size_t SIMULATION_SEED{};
 
-    // If true, the user can select the parity check matrix and run tests with it. Otherwise, the BATCH MODE works, 
-    // which reads all parity check matrices from the specified directory and runs tests with them and writes the results to a file.
-    bool INTERACTIVE_MODE{};
-
     // Enables privacy maintenance after protocol execution.
     bool ENABLE_PRIVACY_MAINTENANCE{}; 
 
@@ -89,7 +107,7 @@ struct config_data
     bool CONSIDER_RTT{};
 
     // RTT (Round-Trip Time) in milliseconds.
-    size_t RTT{};
+    double RTT{};
 
     // Options:
     // 0.   SPA (Sum-Product Algorithm).
@@ -101,13 +119,13 @@ struct config_data
     size_t DECODING_ALGORITHM{};
 
     // Parameters specifying scaling factors for parity-check matrices when using NMSA, OMSA, ANMSA and AOMSA algorithms.
-    algorithm_params DECODING_ALG_PARAMS{};
+    decoding_algorithm_params DECODING_ALG_PARAMS{};
 
     // The maximum number of iterations of the decoding algorithm.
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
     // Four options:
-    // 0.   Dense matrices (folder dense_matrices).
+    // 0.   Uncompressed matrices (folder uncompressed_matrices).
     // 1.   Sparse matrices in 'alist' format (folder sparse_matrices_alist).
     //      About 'alist' format: https://rptu.de/channel-codes/matrix-file-formats.
     // 2.   Sparse matrices in format specified below (folder sparse_matrices_1).
@@ -141,21 +159,34 @@ struct config_data
 
     // Code rate and QBER correspondence set.
     std::vector<R_QBER_map> R_QBER_MAPS{};
+
+    // Enables code rate modulation of pre-built codes by applying puncturing and shortening (https://arxiv.org/abs/1007.1616).
+    bool ENABLE_CODE_RATE_ADAPTATION{};
+
+    // Enables the use of the untainted puncturing when determining the positions of punctured bits (https://arxiv.org/pdf/1103.6149).
+    bool ENABLE_UNTAINTED_PUNCTURING{};
+
+    // Code rate and δ with f_EC correspondence set for rate modulation.
+    std::vector<R_adaptation_parameters_map> R_ADAPT_PARAMS_MAPS{};
 };
 
 extern config_data CFG;
 const double EPSILON = 1e-6;
 
-inline constexpr size_t SPA = 0, SPA_APPROX = 1, NMSA = 2, OMSA = 3, ANMSA = 4, AOMSA = 5;
-inline constexpr size_t DENSE_MAT = 0, SPARSE_MAT_ALIST = 1, SPARSE_MAT_1 = 2, SPARSE_MAT_2 = 3;
+inline constexpr size_t DEC_SPA = 0, DEC_SPA_APPROX = 1, DEC_NMSA = 2, DEC_OMSA = 3, DEC_ANMSA = 4, DEC_AOMSA = 5;
+inline constexpr size_t MAT_UNCOMPRESSED = 0, MAT_SPARSE_ALIST = 1, MAT_SPARSE_1 = 2, MAT_SPARSE_2 = 3;
 
 scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range);
 
-std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps,
-                                                            const std::string& key);
+std::vector<R_scaling_factor_map> parse_scaling_factor_maps(
+    const json& scaling_factor_maps,
+    const std::string& key
+);
 
-void print_config_info(config_data cfg, 
-                       std::string cfg_name,
-                       size_t cfg_number);
+void print_config_info(
+    config_data cfg, 
+    std::string cfg_name,
+    size_t cfg_number
+);
 
 config_data parse_config_data(fs::path config_path);

@@ -16,11 +16,12 @@ void print_array(const std::vector<int> &array);
 
 void print_array(const std::vector<double> &array);
 
-std::vector<fs::path> get_file_paths_in_directory(const fs::path &directory_path);
+std::vector<fs::path> get_file_paths_in_directory(
+    const fs::path &directory_path,
+    const std::string &extension
+);
 
-fs::path select_matrix_file(const std::vector<fs::path> &matrix_paths);
-
-//Outputs to the console matrix.
+// Outputs to the console matrix.
 template <typename T>
 void print_matrix(const std::vector<std::vector<T>> &matrix)
 {

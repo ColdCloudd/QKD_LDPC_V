@@ -1,11 +1,13 @@
 #include "qkd_ldpc_algorithm.hpp"
 
-decoding_result sum_product_decoding(const std::vector<double> &bit_array_llr,
-                                     const H_matrix &matrix,
-                                     const std::vector<int> &syndrome,          
-                                     const size_t &max_num_iterations, 
-                                     const double &msg_threshold, 
-                                     std::vector<int> &bit_array_out)
+decoding_result sum_product_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix,
+    const std::vector<int> &syndrome,          
+    const size_t &max_num_iterations, 
+    const double &msg_threshold, 
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -101,7 +103,7 @@ decoding_result sum_product_decoding(const std::vector<double> &bit_array_llr,
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         std::fill(bit_pos_idx.begin(), bit_pos_idx.end(), 0);
@@ -138,7 +140,7 @@ decoding_result sum_product_decoding(const std::vector<double> &bit_array_llr,
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }
 
 double tanh_lin_approx(double x)
@@ -169,12 +171,14 @@ double atanh_lin_approx(double x)
     return (x < 0.) ? -result : result;
 }
 
-decoding_result sum_product_linear_approx_decoding(const std::vector<double> &bit_array_llr,
-                                                   const H_matrix &matrix,
-                                                   const std::vector<int> &syndrome,          
-                                                   const size_t &max_num_iterations, 
-                                                   const double &msg_threshold, 
-                                                   std::vector<int> &bit_array_out)
+decoding_result sum_product_linear_approx_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix,
+    const std::vector<int> &syndrome,          
+    const size_t &max_num_iterations, 
+    const double &msg_threshold, 
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -270,7 +274,7 @@ decoding_result sum_product_linear_approx_decoding(const std::vector<double> &bi
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         std::fill(bit_pos_idx.begin(), bit_pos_idx.end(), 0);
@@ -307,16 +311,18 @@ decoding_result sum_product_linear_approx_decoding(const std::vector<double> &bi
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }
 
-decoding_result min_sum_normalized_decoding(const std::vector<double> &bit_array_llr,
-                                            const H_matrix &matrix, 
-                                            const std::vector<int> &syndrome,              
-                                            const size_t &max_num_iterations,
-                                            const double &alpha,   
-                                            const double &msg_threshold,      
-                                            std::vector<int> &bit_array_out)
+decoding_result min_sum_normalized_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix, 
+    const std::vector<int> &syndrome,              
+    const size_t &max_num_iterations,
+    const double &alpha,   
+    const double &msg_threshold,      
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -435,7 +441,7 @@ decoding_result min_sum_normalized_decoding(const std::vector<double> &bit_array
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         std::fill(bit_pos_idx.begin(), bit_pos_idx.end(), 0);
@@ -472,16 +478,18 @@ decoding_result min_sum_normalized_decoding(const std::vector<double> &bit_array
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }
 
-decoding_result min_sum_offset_decoding(const std::vector<double> &bit_array_llr,
-                                        const H_matrix &matrix, 
-                                        const std::vector<int> &syndrome,              
-                                        const size_t &max_num_iterations,
-                                        const double &beta,   
-                                        const double &msg_threshold,      
-                                        std::vector<int> &bit_array_out)
+decoding_result min_sum_offset_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix, 
+    const std::vector<int> &syndrome,              
+    const size_t &max_num_iterations,
+    const double &beta,   
+    const double &msg_threshold,      
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -601,7 +609,7 @@ decoding_result min_sum_offset_decoding(const std::vector<double> &bit_array_llr
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         std::fill(bit_pos_idx.begin(), bit_pos_idx.end(), 0);
@@ -638,17 +646,19 @@ decoding_result min_sum_offset_decoding(const std::vector<double> &bit_array_llr
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }                                
 
-decoding_result adaptive_min_sum_normalized_decoding(const std::vector<double> &bit_array_llr,
-                                                     const H_matrix &matrix, 
-                                                     const std::vector<int> &syndrome,              
-                                                     const size_t &max_num_iterations,
-                                                     const double &alpha, 
-                                                     const double &nu, 
-                                                     const double &msg_threshold,      
-                                                     std::vector<int> &bit_array_out)
+decoding_result adaptive_min_sum_normalized_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix, 
+    const std::vector<int> &syndrome,              
+    const size_t &max_num_iterations,
+    const double &alpha, 
+    const double &nu, 
+    const double &msg_threshold,      
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -762,7 +772,7 @@ decoding_result adaptive_min_sum_normalized_decoding(const std::vector<double> &
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         if (CFG.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD)
@@ -825,17 +835,19 @@ decoding_result adaptive_min_sum_normalized_decoding(const std::vector<double> &
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }
 
-decoding_result adaptive_min_sum_offset_decoding(const std::vector<double> &bit_array_llr,
-                                                 const H_matrix &matrix, 
-                                                 const std::vector<int> &syndrome,              
-                                                 const size_t &max_num_iterations,
-                                                 const double &beta, 
-                                                 const double &sigma, 
-                                                 const double &msg_threshold,      
-                                                 std::vector<int> &bit_array_out)
+decoding_result adaptive_min_sum_offset_decoding(
+    const std::vector<double> &bit_array_llr,
+    const H_matrix &matrix, 
+    const std::vector<int> &syndrome,              
+    const size_t &max_num_iterations,
+    const double &beta, 
+    const double &sigma, 
+    const double &msg_threshold,      
+    std::vector<int> &bit_array_out
+)
 {
     double max_llr_c2b = 0.;
     double max_llr_b2c = 0.;
@@ -950,7 +962,7 @@ decoding_result adaptive_min_sum_offset_decoding(const std::vector<double> &bit_
             if (CFG.TRACE_DECODING_ALG_LLR)
                 fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-            return {curr_iteration + 1, true};
+            return {.iterations_num = (curr_iteration + 1), .syndromes_match = true};
         }
 
         if (CFG.ENABLE_DECODING_ALG_MSG_LLR_THRESHOLD)
@@ -1013,14 +1025,17 @@ decoding_result adaptive_min_sum_offset_decoding(const std::vector<double> &bit_
     if (CFG.TRACE_DECODING_ALG_LLR)
         fmt::print(fg(fmt::color::blue), "\nMAX_LLR = {}\n", max_llr);
 
-    return {max_num_iterations, false};
+    return {.iterations_num = max_num_iterations, .syndromes_match = false};
 }
 
-LDPC_result QKD_LDPC(const H_matrix &matrix,
-                     const std::vector<int> &alice_bit_array, 
-                     const std::vector<int> &bob_bit_array, 
-                     const double &QBER,
-                     const decoding_scaling_factors &scaling_factors)
+LDPC_result QKD_LDPC(
+    const H_matrix &matrix,
+    const std::vector<int> &alice_bit_array, 
+    const std::vector<int> &bob_bit_array, 
+    const double &QBER,
+    const decoding_scaling_factors &scaling_factors,
+    const H_matrix_params &matrix_params
+)
 {
     size_t num_bit_nodes = matrix.bit_nodes.size();
     size_t num_check_nodes = matrix.check_nodes.size();
@@ -1038,32 +1053,32 @@ LDPC_result QKD_LDPC(const H_matrix &matrix,
 
     std::vector<int> bob_solution(num_bit_nodes);
     LDPC_result ldpc_res;
-    if (CFG.DECODING_ALGORITHM == SPA)
+    if (CFG.DECODING_ALGORITHM == DEC_SPA)
     {
         ldpc_res.decoding_res = sum_product_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
             CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
-    else if (CFG.DECODING_ALGORITHM == SPA_APPROX)
+    else if (CFG.DECODING_ALGORITHM == DEC_SPA_APPROX)
     {
         ldpc_res.decoding_res = sum_product_linear_approx_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
             CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
-    else if (CFG.DECODING_ALGORITHM == NMSA)
+    else if (CFG.DECODING_ALGORITHM == DEC_NMSA)
     {
         ldpc_res.decoding_res = min_sum_normalized_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
             scaling_factors.primary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
-    else if (CFG.DECODING_ALGORITHM == OMSA)
+    else if (CFG.DECODING_ALGORITHM == DEC_OMSA)
     {
         ldpc_res.decoding_res = min_sum_offset_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
             scaling_factors.primary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
-    else if (CFG.DECODING_ALGORITHM == ANMSA)
+    else if (CFG.DECODING_ALGORITHM == DEC_ANMSA)
     {
         ldpc_res.decoding_res = adaptive_min_sum_normalized_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
             scaling_factors.primary, scaling_factors.secondary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
     }
-    else if (CFG.DECODING_ALGORITHM == AOMSA)
+    else if (CFG.DECODING_ALGORITHM == DEC_AOMSA)
     {
         ldpc_res.decoding_res = adaptive_min_sum_offset_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
             scaling_factors.primary, scaling_factors.secondary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
@@ -1071,19 +1086,10 @@ LDPC_result QKD_LDPC(const H_matrix &matrix,
 
     ldpc_res.keys_match = arrays_equal(alice_bit_array, bob_solution);
 
+    std::vector<int> alice_bit_array_pm;
+    std::vector<int> bob_bit_array_pm;
     if (CFG.ENABLE_PRIVACY_MAINTENANCE)
-    {
-        std::vector<int> alice_bit_array_pm;
-        std::vector<int> bob_bit_array_pm;
-        privacy_maintenance(matrix, alice_bit_array, bob_solution, alice_bit_array_pm, bob_bit_array_pm);
-        if (CFG.TRACE_QKD_LDPC)
-        {
-            fmt::print(fg(fmt::color::blue), "\nAlice bit array after privacy maintenance:\n");
-            print_array(alice_bit_array_pm);
-            fmt::print(fg(fmt::color::blue), "\nBob bit array after privacy maintenance:\n");
-            print_array(bob_bit_array_pm);
-        }
-    }    
+        remove_bits(matrix_params.bits_to_remove, alice_bit_array, bob_solution, alice_bit_array_pm, bob_bit_array_pm);
 
     if (CFG.TRACE_QKD_LDPC)
     {
@@ -1097,9 +1103,152 @@ LDPC_result QKD_LDPC(const H_matrix &matrix,
         print_array(alice_syndrome);
         fmt::print(fg(fmt::color::blue), "\nBob corrected bit array:\n");
         print_array(bob_solution);
+        if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+        {
+            fmt::print(fg(fmt::color::blue), "\nAlice bit array after privacy maintenance:\n");
+            print_array(alice_bit_array_pm);
+            fmt::print(fg(fmt::color::blue), "\nBob bit array after privacy maintenance:\n");
+            print_array(bob_bit_array_pm);
+        }
         fmt::print(fg(fmt::color::blue), "\n\nIterations performed: {}\n", ldpc_res.decoding_res.iterations_num);
-        fmt::print(fg(fmt::color::blue), "Syndromes are match: {}\n", ((ldpc_res.decoding_res.syndromes_match) ? "YES" : "NO"));
-        fmt::print(fg(fmt::color::blue), "Keys are match: {}\n", ((ldpc_res.keys_match) ? "YES" : "NO"));
+        fmt::print(fg(fmt::color::blue), "Syndromes matched: {}\n", ((ldpc_res.decoding_res.syndromes_match) ? "YES" : "NO"));
+        fmt::print(fg(fmt::color::blue), "Keys matched: {}\n", ((ldpc_res.keys_match) ? "YES" : "NO"));
+    }
+
+    return ldpc_res;
+}
+
+LDPC_result QKD_LDPC_RATE_ADAPT(
+    const H_matrix &matrix,
+    const std::vector<int> &alice_bit_array, 
+    const std::vector<int> &bob_bit_array, 
+    const double &QBER,
+    const decoding_scaling_factors &scaling_factors,
+    const H_matrix_params &matrix_params,
+    XoshiroCpp::Xoshiro256PlusPlus &prng
+)
+{
+    size_t num_bit_nodes = matrix.bit_nodes.size();
+    size_t num_check_nodes = matrix.check_nodes.size();
+
+    double log_p = log((1. - QBER) / QBER);         
+    std::vector<double> apriori_llr(num_bit_nodes);
+
+    std::vector<int> alice_bit_array_extended(num_bit_nodes);
+    std::vector<int> bob_bit_array_extended(num_bit_nodes);
+
+    std::uniform_int_distribution<int> distribution(0, 1);
+    
+    size_t p = 0;   // p + s + n = num_bit_nodes
+    size_t s = 0;
+    size_t n = 0;
+    for (int i = 0; i < num_bit_nodes; ++i)
+    {
+        if (matrix_params.punctured_bits[p] == i)
+        {
+            // Punctured bits come from RNG, independently of the both sides.
+            alice_bit_array_extended[i] = distribution(prng);
+            bob_bit_array_extended[i] = distribution(prng);
+            apriori_llr[i] = ALMOST_ZERO;   // To avoid division by zero.
+            ++p;
+        }
+        else if (matrix_params.shortened_bits[s] == i)
+        {
+            // Shortened symbols are the ones which have values exactly
+            // known by Alice and Bob.
+            alice_bit_array_extended[i] = 0;
+            bob_bit_array_extended[i] = 0;
+            apriori_llr[i] = std::numeric_limits<double>::max();    // +inf
+            ++s;
+        }
+        else
+        {
+            alice_bit_array_extended[i] = alice_bit_array[n];
+            bob_bit_array_extended[i] = bob_bit_array[n];
+            apriori_llr[i] = (bob_bit_array[n] ? -log_p : log_p);
+            ++n;
+        }
+    }
+    // std::vector<int> alice_remaining_bits_buffer(p + s);
+    // std::vector<int> bob_remaining_bits_buffer(p + s);
+    // alice_remaining_bits_buffer.assign(alice_bit_array.begin() + n, alice_bit_array.end());
+    // bob_remaining_bits_buffer.assign(bob_bit_array.begin() + n, bob_bit_array.end());
+
+    std::vector<int> alice_syndrome(num_check_nodes);
+    calculate_syndrome(alice_bit_array_extended, matrix, alice_syndrome);
+
+    std::vector<int> bob_solution(num_bit_nodes);
+    LDPC_result ldpc_res;
+    if (CFG.DECODING_ALGORITHM == DEC_SPA)
+    {
+        ldpc_res.decoding_res = sum_product_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
+            CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+    else if (CFG.DECODING_ALGORITHM == DEC_SPA_APPROX)
+    {
+        ldpc_res.decoding_res = sum_product_linear_approx_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS,
+            CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+    else if (CFG.DECODING_ALGORITHM == DEC_NMSA)
+    {
+        ldpc_res.decoding_res = min_sum_normalized_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
+            scaling_factors.primary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+    else if (CFG.DECODING_ALGORITHM == DEC_OMSA)
+    {
+        ldpc_res.decoding_res = min_sum_offset_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
+            scaling_factors.primary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+    else if (CFG.DECODING_ALGORITHM == DEC_ANMSA)
+    {
+        ldpc_res.decoding_res = adaptive_min_sum_normalized_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
+            scaling_factors.primary, scaling_factors.secondary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+    else if (CFG.DECODING_ALGORITHM == DEC_AOMSA)
+    {
+        ldpc_res.decoding_res = adaptive_min_sum_offset_decoding(apriori_llr, matrix, alice_syndrome, CFG.DECODING_ALG_MAX_ITERATIONS, 
+            scaling_factors.primary, scaling_factors.secondary, CFG.DECODING_ALG_MSG_LLR_THRESHOLD, bob_solution);
+    }
+
+    ldpc_res.keys_match = arrays_equal(alice_bit_array_extended, bob_solution);
+
+    std::vector<int> alice_bit_array_rb;
+    std::vector<int> bob_bit_array_rb;
+    remove_bits(matrix_params.bits_to_remove, alice_bit_array_extended, bob_solution, alice_bit_array_rb, bob_bit_array_rb);
+
+    if (CFG.TRACE_QKD_LDPC)
+    {
+        fmt::print(fg(fmt::color::blue), "\nAlice bit array:\n");
+        print_array(alice_bit_array);
+        fmt::print(fg(fmt::color::blue), "\nBob bit array with errors:\n");
+        print_array(bob_bit_array);
+        fmt::print(fg(fmt::color::blue), "\nAlice extended bit array:\n");
+        print_array(alice_bit_array_extended);
+        fmt::print(fg(fmt::color::blue), "\nBob extended bit array:\n");
+        print_array(bob_bit_array_extended);
+        fmt::print(fg(fmt::color::blue), "\nr:\n");
+        print_array(apriori_llr);
+        fmt::print(fg(fmt::color::blue), "\nAlice syndrome:\n");
+        print_array(alice_syndrome);
+        fmt::print(fg(fmt::color::blue), "\nBob corrected bit array:\n");
+        print_array(bob_solution);
+        if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+        {
+            fmt::print(fg(fmt::color::blue), "\nAlice bit array after privacy maintenance:\n");
+            print_array(alice_bit_array_rb);
+            fmt::print(fg(fmt::color::blue), "\nBob bit array after privacy maintenance:\n");
+            print_array(bob_bit_array_rb);
+        }
+        else
+        {
+            fmt::print(fg(fmt::color::blue), "\nAlice bit array after removing punctured and shortened bits:\n");
+            print_array(alice_bit_array_rb);
+            fmt::print(fg(fmt::color::blue), "\nBob bit array after removing punctured and shortened bits:\n");
+            print_array(bob_bit_array_rb);
+        }
+        fmt::print(fg(fmt::color::blue), "\n\nIterations performed: {}\n", ldpc_res.decoding_res.iterations_num);
+        fmt::print(fg(fmt::color::blue), "Syndromes matched: {}\n", ((ldpc_res.decoding_res.syndromes_match) ? "YES" : "NO"));
+        fmt::print(fg(fmt::color::blue), "Keys matched: {}\n", ((ldpc_res.keys_match) ? "YES" : "NO"));
     }
 
     return ldpc_res;

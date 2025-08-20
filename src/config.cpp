@@ -15,11 +15,13 @@ scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range
             throw std::runtime_error("Scaling factor range step is too large!");
     }
 
-    return {begin, end, step};
+    return {.begin = begin, .end = end, .step = step};
 }
 
-std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_factor_maps,
-                                                            const std::string& key) 
+std::vector<R_scaling_factor_map> parse_scaling_factor_maps(
+    const json& scaling_factor_maps,
+    const std::string& key
+) 
 {
     std::vector<R_scaling_factor_map> maps;
     double code_rate;
@@ -47,37 +49,39 @@ std::vector<R_scaling_factor_map> parse_scaling_factor_maps(const json& scaling_
     return maps;
 }
 
-void print_config_info(config_data cfg, 
-                       std::string cfg_name,
-                       size_t cfg_number)
+void print_config_info(
+    config_data cfg, 
+    std::string cfg_name,
+    size_t cfg_number
+)
 {
     fmt::print(fg(fmt::color::yellow), "------------------------- CONFIG #{} INFO --------------------------\n", cfg_number);
     fmt::print(fg(fmt::color::yellow), "Config name: {}\n", fmt::styled(cfg_name, fg(fmt::color::crimson)));
-    fmt::print(fg(fmt::color::yellow), "Simulation MODE: {}\n", fmt::styled(cfg.INTERACTIVE_MODE ? "INTERACTIVE" : "BATCH", fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Threads number: {}\n", fmt::styled(cfg.THREADS_NUMBER, fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Trials number: {}\n", fmt::styled(cfg.TRIALS_NUMBER, fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Simulation seed: {}\n", fmt::styled(cfg.SIMULATION_SEED, fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Privacy maintenance: {}\n", fmt::styled((cfg.ENABLE_PRIVACY_MAINTENANCE ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
-    fmt::print(fg(fmt::color::yellow), "Throughput measurement: {}\n", fmt::styled((cfg.ENABLE_THROUGHPUT_MEASUREMENT ? ("Enabled, RTT = " + std::to_string(cfg.RTT) + " ms") : "Disabled"), fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Throughput measurement: {}\n", fmt::styled((cfg.ENABLE_THROUGHPUT_MEASUREMENT ? ("Enabled, RTT = " + fmt::format("{:.3f}", CFG.RTT) + " ms") : "Disabled"), fg(fmt::color::crimson)));
 
     std::string alg_name =
-        (cfg.DECODING_ALGORITHM == 0) ? "SPA" :
-        (cfg.DECODING_ALGORITHM == 1) ? "SPA (lin approx)" :
-        (cfg.DECODING_ALGORITHM == 2) ? "NMSA" :
-        (cfg.DECODING_ALGORITHM == 3) ? "OMSA" :
-        (cfg.DECODING_ALGORITHM == 4) ? "ANMSA" :
-        (cfg.DECODING_ALGORITHM == 5) ? "AOMSA" : "Unknown";
+        (cfg.DECODING_ALGORITHM == DEC_SPA) ? "SPA" :
+        (cfg.DECODING_ALGORITHM == DEC_SPA_APPROX) ? "SPA(lin approx)" :
+        (cfg.DECODING_ALGORITHM == DEC_NMSA) ? "NMSA" :
+        (cfg.DECODING_ALGORITHM == DEC_OMSA) ? "OMSA" :
+        (cfg.DECODING_ALGORITHM == DEC_ANMSA) ? "ANMSA" :
+        (cfg.DECODING_ALGORITHM == DEC_AOMSA) ? "AOMSA" : "Unknown";
     fmt::print(fg(fmt::color::yellow), "Decoding algorithm: {}\n", fmt::styled(alg_name, fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Decoding algorithm maximum iterations: {}\n", fmt::styled(cfg.DECODING_ALG_MAX_ITERATIONS, fg(fmt::color::crimson)));
 
     std::string mat_format =
-        (cfg.MATRIX_FORMAT == 0) ? "Dense" :
-        (cfg.MATRIX_FORMAT == 1) ? "Sparse (alist)" :
-        (cfg.MATRIX_FORMAT == 2) ? "Sparse (1)" :
-        (cfg.MATRIX_FORMAT == 3) ? "Sparse (2)" : "Unknown";
+        (cfg.MATRIX_FORMAT == MAT_UNCOMPRESSED) ? "Uncompressed" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_ALIST) ? "Sparse(alist)" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_1) ? "Sparse(1)" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_2) ? "Sparse(2)" : "Unknown";
     fmt::print(fg(fmt::color::yellow), "Parity-check matrix format: {}\n", fmt::styled(mat_format, fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Code rate adaptation: {}\n", fmt::styled((cfg.ENABLE_CODE_RATE_ADAPTATION ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
+    fmt::print(fg(fmt::color::yellow), "Untainted puncturing: {}\n", fmt::styled((cfg.ENABLE_UNTAINTED_PUNCTURING ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "--------------------------------------------------------------------\n");
-
 }
 
 // Reads user-defined configuration parameters from a .json file.
@@ -114,7 +118,6 @@ config_data parse_config_data(fs::path config_path)
         else
             cfg.SIMULATION_SEED = time(nullptr);
 
-        cfg.INTERACTIVE_MODE = config["interactive_mode"].template get<bool>();
         cfg.ENABLE_PRIVACY_MAINTENANCE = config["enable_privacy_maintenance"].template get<bool>();
         cfg.ENABLE_THROUGHPUT_MEASUREMENT = config["enable_throughput_measurement"].template get<bool>();
         if (cfg.ENABLE_THROUGHPUT_MEASUREMENT)
@@ -124,17 +127,21 @@ config_data parse_config_data(fs::path config_path)
             const auto &tm_params = config["throughput_measurement_parameters"];
             cfg.CONSIDER_RTT = tm_params["consider_RTT"].template get<bool>();
             if (cfg.CONSIDER_RTT)
-                cfg.RTT = tm_params["RTT"].template get<size_t>();
+            {
+                cfg.RTT = tm_params["RTT"].template get<double>();
+                if (cfg.RTT < 0.)
+                    throw std::runtime_error("Round-Trip Time (RTT) must be >= 0!");
+            }
         }
 
         cfg.DECODING_ALGORITHM = config["decoding_algorithm"].template get<size_t>();
-        if (cfg.DECODING_ALGORITHM > AOMSA)
+        if (cfg.DECODING_ALGORITHM > DEC_AOMSA)
             throw std::runtime_error("Only six options are available: \n0 - SPA;\n1 - SPA (with linear approximation of tanh and atanh);\n2 - NMSA;\n3 - OMSA;\n4 - ANMSA;\n5 - AOMSA.");
 
-        if (cfg.DECODING_ALGORITHM > SPA_APPROX)
+        if (cfg.DECODING_ALGORITHM > DEC_SPA_APPROX)
         {   
             nlohmann::json alg_params;
-            if (cfg.DECODING_ALGORITHM == NMSA)
+            if (cfg.DECODING_ALGORITHM == DEC_NMSA)
             {
                 alg_params = config["min_sum_normalized_parameters"];
                 cfg.DECODING_ALG_PARAMS.primary.use_range = alg_params["use_alpha_range"];
@@ -143,7 +150,7 @@ config_data parse_config_data(fs::path config_path)
                 else
                     cfg.DECODING_ALG_PARAMS.primary.maps = parse_scaling_factor_maps(alg_params["code_rate_alpha_maps"], "alpha");
             }
-            else if (cfg.DECODING_ALGORITHM == OMSA)
+            else if (cfg.DECODING_ALGORITHM == DEC_OMSA)
             {
                 alg_params = config["min_sum_offset_parameters"];
                 cfg.DECODING_ALG_PARAMS.primary.use_range = alg_params["use_beta_range"];
@@ -154,7 +161,7 @@ config_data parse_config_data(fs::path config_path)
             }
             else 
             {
-                if (cfg.DECODING_ALGORITHM == ANMSA)
+                if (cfg.DECODING_ALGORITHM == DEC_ANMSA)
                 {
                     alg_params = config["adaptive_min_sum_normalized_parameters"];
                     cfg.DECODING_ALG_PARAMS.primary.use_range = alg_params["use_alpha_range"];
@@ -169,7 +176,7 @@ config_data parse_config_data(fs::path config_path)
                     else
                         cfg.DECODING_ALG_PARAMS.secondary.maps = parse_scaling_factor_maps(alg_params["code_rate_nu_maps"], "nu");
                 }
-                else if (cfg.DECODING_ALGORITHM == AOMSA)
+                else if (cfg.DECODING_ALGORITHM == DEC_AOMSA)
                 {
                     alg_params = config["adaptive_min_sum_offset_parameters"];
                     cfg.DECODING_ALG_PARAMS.primary.use_range = alg_params["use_beta_range"];
@@ -188,13 +195,13 @@ config_data parse_config_data(fs::path config_path)
                 if (!(cfg.DECODING_ALG_PARAMS.primary.use_range || cfg.DECODING_ALG_PARAMS.secondary.use_range))    // Both scaling factors from maps.
                 {
                     std::string alg_name, prim_scal_factor, second_scal_factor;
-                    if (cfg.DECODING_ALGORITHM == ANMSA)
+                    if (cfg.DECODING_ALGORITHM == DEC_ANMSA)
                     {
                         alg_name = "ANMSA";
                         prim_scal_factor = "alpha";
                         second_scal_factor = "nu";
                     }
-                    else if (cfg.DECODING_ALGORITHM == AOMSA)
+                    else if (cfg.DECODING_ALGORITHM == DEC_AOMSA)
                     {
                         alg_name = "AOMSA";
                         prim_scal_factor = "beta";
@@ -233,8 +240,8 @@ config_data parse_config_data(fs::path config_path)
             throw std::runtime_error("Minimum number of decoding algorithm iterations must be >= 1!");
 
         cfg.MATRIX_FORMAT = config["matrix_format"].template get<size_t>();
-        if (cfg.MATRIX_FORMAT > SPARSE_MAT_2)
-            throw std::runtime_error("Only four options are available: \n0 - dense;\n1 - sparse alist;\n2 - sparse_1;\n3 - sparse_2.");
+        if (cfg.MATRIX_FORMAT > MAT_SPARSE_2)
+            throw std::runtime_error("Only four options are available: \n0 - uncompressed;\n1 - sparse alist;\n2 - sparse_1;\n3 - sparse_2.");
 
         cfg.TRACE_QKD_LDPC = config["trace_qkd_ldpc"].template get<bool>();
         cfg.TRACE_DECODING_ALG = config["trace_decoding_algorithm"].template get<bool>();
@@ -251,8 +258,14 @@ config_data parse_config_data(fs::path config_path)
         const auto &r_qber_maps = config["code_rate_QBER_maps"];
         for (const auto &m : r_qber_maps)
         {
-            cfg.R_QBER_MAPS.push_back({m["code_rate"].template get<double>(), m["QBER_begin"].template get<double>(),
-                                       m["QBER_end"].template get<double>(), m["QBER_step"].template get<double>()});
+            const auto &qber_vals = m["QBER"];
+            R_QBER_map r_qber_map{};
+            r_qber_map.code_rate = m["code_rate"].template get<double>();
+            r_qber_map.QBER_begin = qber_vals["begin"].template get<double>();
+            r_qber_map.QBER_end = qber_vals["end"].template get<double>();
+            r_qber_map.QBER_step = qber_vals["step"].template get<double>();
+
+            cfg.R_QBER_MAPS.push_back(r_qber_map);
         }
 
         if (cfg.R_QBER_MAPS.empty())
@@ -261,7 +274,8 @@ config_data parse_config_data(fs::path config_path)
         {
             if (cfg.R_QBER_MAPS[i].code_rate <= 0. || cfg.R_QBER_MAPS[i].code_rate >= 1.)
                 throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
-            if (cfg.R_QBER_MAPS[i].QBER_begin <= 0. || cfg.R_QBER_MAPS[i].QBER_begin >= 1. || cfg.R_QBER_MAPS[i].QBER_end <= 0. || cfg.R_QBER_MAPS[i].QBER_end >= 1. || cfg.R_QBER_MAPS[i].QBER_begin > cfg.R_QBER_MAPS[i].QBER_end)
+            if (cfg.R_QBER_MAPS[i].QBER_begin <= 0. || cfg.R_QBER_MAPS[i].QBER_begin >= 1. || cfg.R_QBER_MAPS[i].QBER_end <= 0. 
+                || cfg.R_QBER_MAPS[i].QBER_end >= 1. || cfg.R_QBER_MAPS[i].QBER_begin > cfg.R_QBER_MAPS[i].QBER_end)
                 throw std::runtime_error("Invalid QBER begin or end parameters. QBER must be: 0 < QBER < 1, and begin cannot be larger than end!");
             if (cfg.R_QBER_MAPS[i].QBER_step <= 0.)
                 throw std::runtime_error("QBER step must be > 0!");
@@ -277,6 +291,67 @@ config_data parse_config_data(fs::path config_path)
                 return (a.code_rate < b.code_rate);
             });
 
+        cfg.ENABLE_CODE_RATE_ADAPTATION = config["enable_code_rate_adaptation"].template get<bool>();
+        if(cfg.ENABLE_CODE_RATE_ADAPTATION)
+        {
+            cfg.ENABLE_UNTAINTED_PUNCTURING = config["enable_untainted_puncturing"].template get<bool>();
+            
+            const auto &r_adapt_params_maps = config["code_rate_adaptation_parameters_maps"];
+            for (const auto &m : r_adapt_params_maps)
+            {
+                const auto &delta_vals = m["delta"];
+                const auto &efficiency_vals = m["efficiency"];
+
+                R_adaptation_parameters_map r_adapt_par_map{};
+                r_adapt_par_map.code_rate = m["code_rate"].template get<double>();
+
+                r_adapt_par_map.delta_begin = delta_vals["begin"].template get<double>();
+                r_adapt_par_map.delta_end = delta_vals["end"].template get<double>();
+                r_adapt_par_map.delta_step = delta_vals["step"].template get<double>();
+
+                r_adapt_par_map.efficiency_begin = efficiency_vals["begin"].template get<double>();
+                r_adapt_par_map.efficiency_end = efficiency_vals["end"].template get<double>();
+                r_adapt_par_map.efficiency_step = efficiency_vals["step"].template get<double>();
+
+                cfg.R_ADAPT_PARAMS_MAPS.push_back(r_adapt_par_map);
+            }
+
+            if (cfg.R_ADAPT_PARAMS_MAPS.empty())
+                throw std::runtime_error("Array with code rate(R) and adaptation parameters maps is empty!");
+            for (size_t i = 0; i < cfg.R_ADAPT_PARAMS_MAPS.size(); i++)
+            {
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].code_rate <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].code_rate >= 1.)
+                    throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
+
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin >= 1. 
+                    || cfg.R_ADAPT_PARAMS_MAPS[i].delta_end <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].delta_end >= 1. 
+                    || cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin > cfg.R_ADAPT_PARAMS_MAPS[i].delta_end)
+                    throw std::runtime_error("Invalid delta begin or end parameters. Delta must be: 0 < delta < 1, and begin cannot be larger than end!");
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_step <= 0.)
+                    throw std::runtime_error("Delta step must be > 0!");
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin != cfg.R_ADAPT_PARAMS_MAPS[i].delta_end)
+                {
+                    if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_step - EPSILON > cfg.R_ADAPT_PARAMS_MAPS[i].delta_end - cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin)
+                        throw std::runtime_error("Delta step is too large.");
+                }
+
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin < 1. || cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end < 1. 
+                    || cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin > cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end)
+                    throw std::runtime_error("Invalid efficiency begin or end parameters. Efficiency(f_EC) must be: f_EC >= 1, and begin cannot be larger than end!");
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_step <= 0.)
+                    throw std::runtime_error("Efficiency step must be > 0!");
+                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin != cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end)
+                {
+                    if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_step - EPSILON > cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end - cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin)
+                        throw std::runtime_error("Efficiency step is too large.");
+                }
+            }
+            std::sort(cfg.R_ADAPT_PARAMS_MAPS.begin(), cfg.R_ADAPT_PARAMS_MAPS.end(),
+                [](R_adaptation_parameters_map &a, R_adaptation_parameters_map &b)
+                {
+                    return (a.code_rate < b.code_rate);
+                });
+        }
         return cfg;
     }
     catch (const std::exception &e)
