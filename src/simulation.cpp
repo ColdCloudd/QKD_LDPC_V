@@ -116,7 +116,7 @@ fs::path write_file(
         for (size_t i = 0; i < data.size(); i++)
         {
             double FER = 1. - data[i].ratio_trials_success_ldpc;
-            FER = (trunc(FER * static_cast<double>(CFG.TRIALS_NUMBER)) / static_cast<double>(CFG.TRIALS_NUMBER));
+            FER = (round(FER * static_cast<double>(CFG.TRIALS_NUMBER)) / static_cast<double>(CFG.TRIALS_NUMBER));
             
             std::string line = fmt::format(
             "{};{};{};{:.3f};{};{};{:.4f};{:.2f};{:.2f};{};{};{};{};{}",
