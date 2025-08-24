@@ -8,19 +8,19 @@ fs::path write_file(
 )
 {
     // Custom locale settings
-    // class custom_numpunct : public std::numpunct<char> 
-    // {
-    //     protected:
-    //         char do_decimal_point() const override 
-    //         {
-    //             return ','; 
-    //         }
+    class custom_numpunct : public std::numpunct<char> 
+    {
+        protected:
+            char do_decimal_point() const override 
+            {
+                return ','; 
+            }
 
-    //         std::string do_grouping() const override 
-    //         {
-    //             return ""; 
-    //         }
-    // };
+            std::string do_grouping() const override 
+            {
+                return ""; 
+            }
+    };
 
     try
     {
@@ -101,8 +101,7 @@ fs::path write_file(
         }
 
         std::fstream fout;
-        // std::locale custom_locale(std::locale(""), new custom_numpunct());
-        // fout.imbue(custom_locale);
+        std::locale custom_locale(std::locale(""), new custom_numpunct());
         
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
         fout << "#;MATRIX_FILENAME;TYPE;R;M;N;QBER;ITER_SUCCESS_MEAN;ITER_SUCCESS_STD;ITER_SUCCESS_MIN;ITER_SUCCESS_MAX;"
@@ -118,8 +117,8 @@ fs::path write_file(
             double FER = 1. - data[i].ratio_trials_success_ldpc;
             FER = (round(FER * static_cast<double>(CFG.TRIALS_NUMBER)) / static_cast<double>(CFG.TRIALS_NUMBER));
             
-            std::string line = fmt::format(
-            "{};{};{};{:.3f};{};{};{:.4f};{:.2f};{:.2f};{};{};{};{};{}",
+            std::string line = fmt::format(custom_locale,
+            "{};{};{};{:.3Lf};{};{};{:.4Lf};{:.2Lf};{:.2Lf};{};{};{:L};{:L};{:L}",
             data[i].sim_number,
             data[i].matrix_filename,
             (data[i].is_regular ? "regular" : "irregular"),
@@ -138,8 +137,8 @@ fs::path write_file(
 
             if (CFG.ENABLE_CODE_RATE_ADAPTATION) 
             {
-                line += fmt::format(
-                    ";{:.3f};{:.3f};{:.3f};{:.3f};{:.3f}",
+                line += fmt::format(custom_locale,
+                    ";{:.3Lf};{:.3Lf};{:.3Lf};{:.3Lf};{:.3Lf}",
                     data[i].delta,
                     data[i].efficiency,
                     data[i].punctured_fraction,
@@ -150,7 +149,7 @@ fs::path write_file(
 
             if (CFG.ENABLE_THROUGHPUT_MEASUREMENT) 
             {
-                line += fmt::format(
+                line += fmt::format(custom_locale,
                     ";{};{};{};{}",
                     data[i].throughput_mean,
                     data[i].throughput_std_dev,
@@ -160,9 +159,9 @@ fs::path write_file(
             }
 
             if (is_nmsa_omsa || is_anmsa_aomsa) 
-                line += fmt::format(";{:.3f}", data[i].scaling_factors.primary);
+                line += fmt::format(custom_locale, ";{:.3Lf}", data[i].scaling_factors.primary);
             if (is_anmsa_aomsa)
-                line += fmt::format(";{:.3f}", data[i].scaling_factors.secondary);
+                line += fmt::format(custom_locale, ";{:.3Lf}", data[i].scaling_factors.secondary);
             fout << line << "\n";
         }
         fout.close();
