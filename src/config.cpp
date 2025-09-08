@@ -75,11 +75,12 @@ void print_config_info(
 
     std::string mat_format =
         (cfg.MATRIX_FORMAT == MAT_UNCOMPRESSED) ? "Uncompressed" :
-        (cfg.MATRIX_FORMAT == MAT_SPARSE_ALIST) ? "Sparse(alist)" :
-        (cfg.MATRIX_FORMAT == MAT_SPARSE_1) ? "Sparse(1)" :
-        (cfg.MATRIX_FORMAT == MAT_SPARSE_2) ? "Sparse(2)" : "Unknown";
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_ALIST) ? "Sparse (alist)" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_1) ? "Sparse (1)" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_2) ? "Sparse (2)" : "Unknown";
     fmt::print(fg(fmt::color::yellow), "Parity-check matrix format: {}\n", fmt::styled(mat_format, fg(fmt::color::crimson)));
-    fmt::print(fg(fmt::color::yellow), "Code rate adaptation: {}\n", fmt::styled((cfg.ENABLE_CODE_RATE_ADAPTATION ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
+    std::string rate_adapt_params_option = (cfg.USE_ADAPTATION_PARAMETERS_RANGES) ? " (ranges)" : " (maps)";
+    fmt::print(fg(fmt::color::yellow), "Code rate adaptation: {}\n", fmt::styled((cfg.ENABLE_CODE_RATE_ADAPTATION ? ("Enabled" + rate_adapt_params_option): "Disabled"), fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "Untainted puncturing: {}\n", fmt::styled((cfg.ENABLE_UNTAINTED_PUNCTURING ? "Enabled" : "Disabled"), fg(fmt::color::crimson)));
     fmt::print(fg(fmt::color::yellow), "--------------------------------------------------------------------\n");
 }
@@ -255,38 +256,38 @@ config_data parse_config_data(fs::path config_path)
                 throw std::runtime_error("Sum-product message LLR threshold must be > 0!");
         }
 
-        const auto &r_qber_maps = config["code_rate_QBER_maps"];
-        for (const auto &m : r_qber_maps)
+        const auto &r_qber_ranges = config["code_rate_QBER_ranges"];
+        for (const auto &r : r_qber_ranges)
         {
-            const auto &qber_vals = m["QBER"];
-            R_QBER_map r_qber_map{};
-            r_qber_map.code_rate = m["code_rate"].template get<double>();
-            r_qber_map.QBER_begin = qber_vals["begin"].template get<double>();
-            r_qber_map.QBER_end = qber_vals["end"].template get<double>();
-            r_qber_map.QBER_step = qber_vals["step"].template get<double>();
+            const auto &qber_vals = r["QBER"];
+            R_QBER_range r_qber_rng{};
+            r_qber_rng.code_rate = r["code_rate"].template get<double>();
+            r_qber_rng.QBER_begin = qber_vals["begin"].template get<double>();
+            r_qber_rng.QBER_end = qber_vals["end"].template get<double>();
+            r_qber_rng.QBER_step = qber_vals["step"].template get<double>();
 
-            cfg.R_QBER_MAPS.push_back(r_qber_map);
+            cfg.R_QBER_RANGES.push_back(r_qber_rng);
         }
 
-        if (cfg.R_QBER_MAPS.empty())
-            throw std::runtime_error("Array with code rate(R) and QBER maps is empty!");
-        for (size_t i = 0; i < cfg.R_QBER_MAPS.size(); i++)
+        if (cfg.R_QBER_RANGES.empty())
+            throw std::runtime_error("Array with code rate(R) and QBER ranges is empty!");
+        for (size_t i = 0; i < cfg.R_QBER_RANGES.size(); i++)
         {
-            if (cfg.R_QBER_MAPS[i].code_rate <= 0. || cfg.R_QBER_MAPS[i].code_rate >= 1.)
+            if (cfg.R_QBER_RANGES[i].code_rate <= 0. || cfg.R_QBER_RANGES[i].code_rate >= 1.)
                 throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
-            if (cfg.R_QBER_MAPS[i].QBER_begin <= 0. || cfg.R_QBER_MAPS[i].QBER_begin >= 1. || cfg.R_QBER_MAPS[i].QBER_end <= 0. 
-                || cfg.R_QBER_MAPS[i].QBER_end >= 1. || cfg.R_QBER_MAPS[i].QBER_begin > cfg.R_QBER_MAPS[i].QBER_end)
+            if (cfg.R_QBER_RANGES[i].QBER_begin <= 0. || cfg.R_QBER_RANGES[i].QBER_begin >= 1. || cfg.R_QBER_RANGES[i].QBER_end <= 0. 
+                || cfg.R_QBER_RANGES[i].QBER_end >= 1. || cfg.R_QBER_RANGES[i].QBER_begin > cfg.R_QBER_RANGES[i].QBER_end)
                 throw std::runtime_error("Invalid QBER begin or end parameters. QBER must be: 0 < QBER < 1, and begin cannot be larger than end!");
-            if (cfg.R_QBER_MAPS[i].QBER_step <= 0.)
+            if (cfg.R_QBER_RANGES[i].QBER_step <= 0.)
                 throw std::runtime_error("QBER step must be > 0!");
-            if (cfg.R_QBER_MAPS[i].QBER_begin != cfg.R_QBER_MAPS[i].QBER_end)
+            if (cfg.R_QBER_RANGES[i].QBER_begin != cfg.R_QBER_RANGES[i].QBER_end)
             {
-                if (cfg.R_QBER_MAPS[i].QBER_step - EPSILON > cfg.R_QBER_MAPS[i].QBER_end - cfg.R_QBER_MAPS[i].QBER_begin)
+                if (cfg.R_QBER_RANGES[i].QBER_step - EPSILON > cfg.R_QBER_RANGES[i].QBER_end - cfg.R_QBER_RANGES[i].QBER_begin)
                     throw std::runtime_error("QBER step is too large.");
             }
         }
-        std::sort(cfg.R_QBER_MAPS.begin(), cfg.R_QBER_MAPS.end(),
-            [](R_QBER_map &a, R_QBER_map &b)
+        std::sort(cfg.R_QBER_RANGES.begin(), cfg.R_QBER_RANGES.end(),
+            [](R_QBER_range &a, R_QBER_range &b)
             {
                 return (a.code_rate < b.code_rate);
             });
@@ -294,63 +295,103 @@ config_data parse_config_data(fs::path config_path)
         cfg.ENABLE_CODE_RATE_ADAPTATION = config["enable_code_rate_adaptation"].template get<bool>();
         if(cfg.ENABLE_CODE_RATE_ADAPTATION)
         {
-            cfg.ENABLE_UNTAINTED_PUNCTURING = config["enable_untainted_puncturing"].template get<bool>();
-            
-            const auto &r_adapt_params_maps = config["code_rate_adaptation_parameters_maps"];
-            for (const auto &m : r_adapt_params_maps)
+            const auto &r_adapt_params = config["code_rate_adaptation_parameters"];
+
+            cfg.ENABLE_UNTAINTED_PUNCTURING = r_adapt_params["enable_untainted_puncturing"].template get<bool>();
+
+            cfg.USE_ADAPTATION_PARAMETERS_RANGES = r_adapt_params["use_adaptation_parameters_ranges"].template get<bool>();
+            if (cfg.USE_ADAPTATION_PARAMETERS_RANGES)
             {
-                const auto &delta_vals = m["delta"];
-                const auto &efficiency_vals = m["efficiency"];
-
-                R_adaptation_parameters_map r_adapt_par_map{};
-                r_adapt_par_map.code_rate = m["code_rate"].template get<double>();
-
-                r_adapt_par_map.delta_begin = delta_vals["begin"].template get<double>();
-                r_adapt_par_map.delta_end = delta_vals["end"].template get<double>();
-                r_adapt_par_map.delta_step = delta_vals["step"].template get<double>();
-
-                r_adapt_par_map.efficiency_begin = efficiency_vals["begin"].template get<double>();
-                r_adapt_par_map.efficiency_end = efficiency_vals["end"].template get<double>();
-                r_adapt_par_map.efficiency_step = efficiency_vals["step"].template get<double>();
-
-                cfg.R_ADAPT_PARAMS_MAPS.push_back(r_adapt_par_map);
-            }
-
-            if (cfg.R_ADAPT_PARAMS_MAPS.empty())
-                throw std::runtime_error("Array with code rate(R) and adaptation parameters maps is empty!");
-            for (size_t i = 0; i < cfg.R_ADAPT_PARAMS_MAPS.size(); i++)
-            {
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].code_rate <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].code_rate >= 1.)
-                    throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
-
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin >= 1. 
-                    || cfg.R_ADAPT_PARAMS_MAPS[i].delta_end <= 0. || cfg.R_ADAPT_PARAMS_MAPS[i].delta_end >= 1. 
-                    || cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin > cfg.R_ADAPT_PARAMS_MAPS[i].delta_end)
-                    throw std::runtime_error("Invalid delta begin or end parameters. Delta must be: 0 < delta < 1, and begin cannot be larger than end!");
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_step <= 0.)
-                    throw std::runtime_error("Delta step must be > 0!");
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin != cfg.R_ADAPT_PARAMS_MAPS[i].delta_end)
+                const auto &r_adapt_params_ranges = r_adapt_params["code_rate_adaptation_parameters_ranges"];
+                for (const auto &r : r_adapt_params_ranges)
                 {
-                    if (cfg.R_ADAPT_PARAMS_MAPS[i].delta_step - EPSILON > cfg.R_ADAPT_PARAMS_MAPS[i].delta_end - cfg.R_ADAPT_PARAMS_MAPS[i].delta_begin)
-                        throw std::runtime_error("Delta step is too large.");
+                    const auto &delta_vals = r["delta"];
+                    const auto &efficiency_vals = r["efficiency"];
+
+                    R_adaptation_parameters_range r_adapt_par_rng{};
+                    r_adapt_par_rng.code_rate = r["code_rate"].template get<double>();
+
+                    r_adapt_par_rng.delta_begin = delta_vals["begin"].template get<double>();
+                    r_adapt_par_rng.delta_end = delta_vals["end"].template get<double>();
+                    r_adapt_par_rng.delta_step = delta_vals["step"].template get<double>();
+
+                    r_adapt_par_rng.efficiency_begin = efficiency_vals["begin"].template get<double>();
+                    r_adapt_par_rng.efficiency_end = efficiency_vals["end"].template get<double>();
+                    r_adapt_par_rng.efficiency_step = efficiency_vals["step"].template get<double>();
+
+                    cfg.R_ADAPT_PARAMS_RANGES.push_back(r_adapt_par_rng);
                 }
 
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin < 1. || cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end < 1. 
-                    || cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin > cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end)
-                    throw std::runtime_error("Invalid efficiency begin or end parameters. Efficiency(f_EC) must be: f_EC >= 1, and begin cannot be larger than end!");
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_step <= 0.)
-                    throw std::runtime_error("Efficiency step must be > 0!");
-                if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin != cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end)
+                if (cfg.R_ADAPT_PARAMS_RANGES.empty())
+                    throw std::runtime_error("Array with code rate(R) and adaptation parameters ranges is empty!");
+                for (size_t i = 0; i < cfg.R_ADAPT_PARAMS_RANGES.size(); i++)
                 {
-                    if (cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_step - EPSILON > cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_end - cfg.R_ADAPT_PARAMS_MAPS[i].efficiency_begin)
-                        throw std::runtime_error("Efficiency step is too large.");
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].code_rate <= 0. || cfg.R_ADAPT_PARAMS_RANGES[i].code_rate >= 1.)
+                        throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
+
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].delta_begin <= 0. || cfg.R_ADAPT_PARAMS_RANGES[i].delta_begin >= 1. 
+                        || cfg.R_ADAPT_PARAMS_RANGES[i].delta_end <= 0. || cfg.R_ADAPT_PARAMS_RANGES[i].delta_end >= 1. 
+                        || cfg.R_ADAPT_PARAMS_RANGES[i].delta_begin > cfg.R_ADAPT_PARAMS_RANGES[i].delta_end)
+                        throw std::runtime_error("Invalid delta begin or end parameters. Delta must be: 0 < delta < 1, and begin cannot be larger than end!");
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].delta_step <= 0.)
+                        throw std::runtime_error("Delta step must be > 0!");
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].delta_begin != cfg.R_ADAPT_PARAMS_RANGES[i].delta_end)
+                    {
+                        if (cfg.R_ADAPT_PARAMS_RANGES[i].delta_step - EPSILON > cfg.R_ADAPT_PARAMS_RANGES[i].delta_end - cfg.R_ADAPT_PARAMS_RANGES[i].delta_begin)
+                            throw std::runtime_error("Delta step is too large.");
+                    }
+
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_begin < 1. || cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_end < 1. 
+                        || cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_begin > cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_end)
+                        throw std::runtime_error("Invalid efficiency begin or end parameters. Efficiency(f_EC) must be: f_EC >= 1, and begin cannot be larger than end!");
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_step <= 0.)
+                        throw std::runtime_error("Efficiency step must be > 0!");
+                    if (cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_begin != cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_end)
+                    {
+                        if (cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_step - EPSILON > cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_end - cfg.R_ADAPT_PARAMS_RANGES[i].efficiency_begin)
+                            throw std::runtime_error("Efficiency step is too large.");
+                    }
                 }
+                std::sort(cfg.R_ADAPT_PARAMS_RANGES.begin(), cfg.R_ADAPT_PARAMS_RANGES.end(),
+                    [](R_adaptation_parameters_range &a, R_adaptation_parameters_range &b)
+                    {
+                        return (a.code_rate < b.code_rate);
+                    });
             }
-            std::sort(cfg.R_ADAPT_PARAMS_MAPS.begin(), cfg.R_ADAPT_PARAMS_MAPS.end(),
-                [](R_adaptation_parameters_map &a, R_adaptation_parameters_map &b)
+            else
+            {
+                const auto &r_qber_adapt_params_maps = r_adapt_params["code_rate_QBER_adaptation_parameters_maps"];
+                for (const auto &m : r_qber_adapt_params_maps)
                 {
-                    return (a.code_rate < b.code_rate);
-                });
+                    R_QBER_adaptation_parameters_map r_qber_adapt_par_map{};
+                    
+                    r_qber_adapt_par_map.code_rate = m["code_rate"].template get<double>();
+                    r_qber_adapt_par_map.QBER_adapt_params.QBER = m["QBER"].template get<double>();
+                    r_qber_adapt_par_map.QBER_adapt_params.delta = m["delta"].template get<double>();
+                    r_qber_adapt_par_map.QBER_adapt_params.efficiency= m["efficiency"].template get<double>();
+
+                    cfg.R_QBER_ADAPT_PARAMS_MAPS.push_back(r_qber_adapt_par_map);
+                }
+
+                if (cfg.R_QBER_ADAPT_PARAMS_MAPS.empty())
+                    throw std::runtime_error("Array with code rate(R), QBER and adaptation parameters maps is empty!");
+                for (size_t i = 0; i < cfg.R_QBER_ADAPT_PARAMS_MAPS.size(); i++)
+                {
+                    if (cfg.R_QBER_ADAPT_PARAMS_MAPS[i].code_rate <= 0. || cfg.R_QBER_ADAPT_PARAMS_MAPS[i].code_rate >= 1.)
+                        throw std::runtime_error("Code rate(R) must be: 0 < R < 1!");
+                    if (cfg.R_QBER_ADAPT_PARAMS_MAPS[i].QBER_adapt_params.QBER <= 0. || cfg.R_QBER_ADAPT_PARAMS_MAPS[i].QBER_adapt_params.QBER >= 1.)
+                        throw std::runtime_error("Invalid QBER parameter. QBER must be: 0 < QBER < 1!");
+                    if (cfg.R_QBER_ADAPT_PARAMS_MAPS[i].QBER_adapt_params.delta <= 0. || cfg.R_QBER_ADAPT_PARAMS_MAPS[i].QBER_adapt_params.delta >= 1.)
+                        throw std::runtime_error("Invalid delta parameter. Delta must be: 0 < delta < 1!");
+                    if (cfg.R_QBER_ADAPT_PARAMS_MAPS[i].QBER_adapt_params.efficiency < 1.)
+                        throw std::runtime_error("Invalid efficiency parameter. Efficiency(f_EC) must be: f_EC >= 1!");
+                }
+                std::sort(cfg.R_QBER_ADAPT_PARAMS_MAPS.begin(), cfg.R_QBER_ADAPT_PARAMS_MAPS.end(),
+                    [](R_QBER_adaptation_parameters_map &a, R_QBER_adaptation_parameters_map &b)
+                    {
+                        return (a.code_rate < b.code_rate);
+                    });
+            }
         }
         return cfg;
     }

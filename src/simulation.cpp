@@ -2,24 +2,24 @@
 
 // Records the results of the simulation in a ".csv" format file.
 fs::path write_file(
-    const std::vector<sim_result> &data,
+    const std::vector<sim_result>& data,
     std::string sim_duration,
     fs::path directory
 )
 {
     // Custom locale settings
-    class custom_numpunct : public std::numpunct<char> 
+    class custom_numpunct : public std::numpunct<char>
     {
-        protected:
-            char do_decimal_point() const override 
-            {
-                return ','; 
-            }
+    protected:
+        char do_decimal_point() const override
+        {
+            return ',';
+        }
 
-            std::string do_grouping() const override 
-            {
-                return ""; 
-            }
+        std::string do_grouping() const override
+        {
+            return "";
+        }
     };
 
     try
@@ -30,14 +30,14 @@ fs::path write_file(
         bool is_nmsa_omsa = false, is_anmsa_aomsa = false;
         std::string dec_alg_name, scaling_factor_name = "";
         if (CFG.DECODING_ALGORITHM == DEC_SPA)
-        { 
+        {
             dec_alg_name = "SPA";
         }
         else if (CFG.DECODING_ALGORITHM == DEC_SPA_APPROX)
         {
             dec_alg_name = "SPA-LIN-APPROX";
         }
-        else if (CFG.DECODING_ALGORITHM == DEC_NMSA) 
+        else if (CFG.DECODING_ALGORITHM == DEC_NMSA)
         {
             dec_alg_name = "NMSA";
             scaling_factor_name = ";ALPHA";
@@ -49,7 +49,7 @@ fs::path write_file(
             scaling_factor_name = ";BETA";
             is_nmsa_omsa = true;
         }
-        else if (CFG.DECODING_ALGORITHM == DEC_ANMSA) 
+        else if (CFG.DECODING_ALGORITHM == DEC_ANMSA)
         {
             dec_alg_name = "ANMSA";
             scaling_factor_name = ";ALPHA;NU";
@@ -73,21 +73,21 @@ fs::path write_file(
         }
         else
             rate_adapt = "OFF";
-        
+
         std::string rtt_part = "";
-        if (CFG.ENABLE_THROUGHPUT_MEASUREMENT && CFG.CONSIDER_RTT) 
+        if (CFG.ENABLE_THROUGHPUT_MEASUREMENT && CFG.CONSIDER_RTT)
             rtt_part = ",RTT=" + fmt::format("{:.3f}", CFG.RTT) + "ms";
 
         std::string base_filename =
             "ldpc("
-            "trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + "," 
-            "dec_alg=" + dec_alg_name + "," 
-            "max_dec_alg_iters=" + std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + "," 
-            "priv_maint=" + std::string(CFG.ENABLE_PRIVACY_MAINTENANCE ? "ON" : "OFF") + "," 
-            "rate_adapt=" + rate_adapt + 
+            "trial_num=" + std::to_string(CFG.TRIALS_NUMBER) + ","
+            "dec_alg=" + dec_alg_name + ","
+            "max_dec_alg_iters=" + std::to_string(CFG.DECODING_ALG_MAX_ITERATIONS) + ","
+            "priv_maint=" + std::string(CFG.ENABLE_PRIVACY_MAINTENANCE ? "ON" : "OFF") + ","
+            "rate_adapt=" + rate_adapt +
             rtt_part + ","
-            "seed=" + std::to_string(CFG.SIMULATION_SEED) + "," 
-            "sim_duration=" + sim_duration + 
+            "seed=" + std::to_string(CFG.SIMULATION_SEED) + ","
+            "sim_duration=" + sim_duration +
             ")";
 
         std::string extension = ".csv";
@@ -102,10 +102,10 @@ fs::path write_file(
 
         std::fstream fout;
         std::locale custom_locale(std::locale(""), new custom_numpunct());
-        
+
         fout.open(result_file_path, std::ios::out | std::ios::trunc);
-        fout << "#;MATRIX_FILENAME;TYPE;R;M;N;QBER;ITER_SUCCESS_MEAN;ITER_SUCCESS_STD;ITER_SUCCESS_MIN;ITER_SUCCESS_MAX;"
-        "RATIO_SUCCESS_DEC;RATIO_SUCCESS_LDPC;FER";
+        fout << "#;MATRIX_FILENAME;TYPE;R;M;N;CONFIG_QBER;ACCURATE_QBER;ITER_SUCCESS_MEAN;ITER_SUCCESS_STD;ITER_SUCCESS_MIN;"
+            "ITER_SUCCESS_MAX;RATIO_SUCCESS_DEC;RATIO_SUCCESS_LDPC;FER";
         if (CFG.ENABLE_CODE_RATE_ADAPTATION)
             fout << ";DELTA;EFFICIENCY;PUNCT_FRACTION;SHORT_FRACTION;R_ADAPTED";
         if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
@@ -116,26 +116,27 @@ fs::path write_file(
         {
             double FER = 1. - data[i].ratio_trials_success_ldpc;
             FER = (round(FER * static_cast<double>(CFG.TRIALS_NUMBER)) / static_cast<double>(CFG.TRIALS_NUMBER));
-            
+
             std::string line = fmt::format(custom_locale,
-            "{};{};{};{:.3Lf};{};{};{:.4Lf};{:.2Lf};{:.2Lf};{};{};{:L};{:L};{:L}",
-            data[i].sim_number,
-            data[i].matrix_filename,
-            (data[i].is_regular ? "regular" : "irregular"),
-            1. - (static_cast<double>(data[i].num_check_nodes) / static_cast<double>(data[i].num_bit_nodes)),
-            data[i].num_check_nodes,
-            data[i].num_bit_nodes,
-            data[i].accurate_QBER,
-            data[i].iter_success_dec_alg_mean,
-            data[i].iter_success_dec_alg_std_dev,
-            data[i].iter_success_dec_alg_min,
-            data[i].iter_success_dec_alg_max,
-            data[i].ratio_trials_success_dec_alg,
-            data[i].ratio_trials_success_ldpc,
-            FER
+                "{};{};{};{:.3Lf};{};{};{:.4Lf};{:.4Lf};{:.2Lf};{:.2Lf};{};{};{:L};{:L};{:L}",
+                data[i].sim_number,
+                data[i].matrix_filename,
+                (data[i].is_regular ? "regular" : "irregular"),
+                1. - (static_cast<double>(data[i].num_check_nodes) / static_cast<double>(data[i].num_bit_nodes)),
+                data[i].num_check_nodes,
+                data[i].num_bit_nodes,
+                data[i].config_QBER,
+                data[i].accurate_QBER,
+                data[i].iter_success_dec_alg_mean,
+                data[i].iter_success_dec_alg_std_dev,
+                data[i].iter_success_dec_alg_min,
+                data[i].iter_success_dec_alg_max,
+                data[i].ratio_trials_success_dec_alg,
+                data[i].ratio_trials_success_ldpc,
+                FER
             );
 
-            if (CFG.ENABLE_CODE_RATE_ADAPTATION) 
+            if (CFG.ENABLE_CODE_RATE_ADAPTATION)
             {
                 line += fmt::format(custom_locale,
                     ";{:.3Lf};{:.3Lf};{:.3Lf};{:.3Lf};{:.3Lf}",
@@ -147,7 +148,7 @@ fs::path write_file(
                 );
             }
 
-            if (CFG.ENABLE_THROUGHPUT_MEASUREMENT) 
+            if (CFG.ENABLE_THROUGHPUT_MEASUREMENT)
             {
                 line += fmt::format(custom_locale,
                     ";{};{};{};{}",
@@ -158,7 +159,7 @@ fs::path write_file(
                 );
             }
 
-            if (is_nmsa_omsa || is_anmsa_aomsa) 
+            if (is_nmsa_omsa || is_anmsa_aomsa)
                 line += fmt::format(custom_locale, ";{:.3Lf}", data[i].scaling_factors.primary);
             if (is_anmsa_aomsa)
                 line += fmt::format(custom_locale, ";{:.3Lf}", data[i].scaling_factors.secondary);
@@ -167,7 +168,7 @@ fs::path write_file(
         fout.close();
         return result_file_path;
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& e)
     {
         fmt::print(stderr, fg(fmt::color::red), "An error occurred while writing to the file.\n");
         throw;
@@ -175,111 +176,153 @@ fs::path write_file(
 }
 
 // Get QBER range based on code rate of matrix. 
-// R_QBER_maps must be sorted. Looks for the first set of parameters
+// R_QBER_ranges must be sorted. Looks for the first set of parameters
 // where the code rate is less than or equal to the specified rate, 
 // and uses these parameters to generate a range of QBER values.
 std::vector<double> get_rate_based_QBER_range(
-    const double code_rate,
-    const std::vector<R_QBER_map> &R_QBER_maps
+    double code_rate,
+    const std::vector<R_QBER_range>& R_QBER_ranges
 )
 {
-    std::vector<double> QBER;
-    for (size_t i = 0; i < R_QBER_maps.size(); i++)
+    std::vector<double> QBER_rng;
+    for (size_t i = 0; i < R_QBER_ranges.size(); i++)
     {
-        if (code_rate <= R_QBER_maps[i].code_rate)
+        if (code_rate <= R_QBER_ranges[i].code_rate)
         {
-            if (R_QBER_maps[i].QBER_begin == R_QBER_maps[i].QBER_end)   // Use only one specified value.
+            if (R_QBER_ranges[i].QBER_begin == R_QBER_ranges[i].QBER_end)   // Use only one specified value.
             {
-                QBER.push_back(R_QBER_maps[i].QBER_begin);
+                QBER_rng.push_back(R_QBER_ranges[i].QBER_begin);
                 break;
             }
-            
-            size_t steps = static_cast<size_t>(round((R_QBER_maps[i].QBER_end - R_QBER_maps[i].QBER_begin) / R_QBER_maps[i].QBER_step)) + 1;    // including 'end' value 
-            double value {};
-            for (size_t j = 0; j < steps; j++) 
+
+            size_t steps = static_cast<size_t>(round((R_QBER_ranges[i].QBER_end - R_QBER_ranges[i].QBER_begin) / R_QBER_ranges[i].QBER_step)) + 1;    // including 'end' value 
+            double value{};
+            for (size_t j = 0; j < steps; j++)
             {
-                value = R_QBER_maps[i].QBER_begin + static_cast<double>(j) * R_QBER_maps[i].QBER_step;
-                QBER.push_back(value);
+                value = R_QBER_ranges[i].QBER_begin + static_cast<double>(j) * R_QBER_ranges[i].QBER_step;
+                QBER_rng.push_back(value);
             }
             break;
         }
     }
-    if (QBER.empty())
+    if (QBER_rng.empty())
     {
-        throw std::runtime_error("An error occurred while generating a QBER range based on code rate(R).");
+        throw std::runtime_error(fmt::format("An error occurred while generating a QBER range based "
+            "on code rate(R). Matrix code rate, R = {}.", code_rate));
     }
-    return QBER;
+    return QBER_rng;
 }
 
 // Get delta(δ) and efficiency(f_EC) ranges based on code rate of matrix. 
-// R_adapt_param_maps must be sorted. Looks for the first set of parameters
+// R_adapt_param_ranges must be sorted. Looks for the first set of parameters
 // where the code rate is less than or equal to the specified rate, 
 // and uses these parameters to generate a range of delta and efficiency values.
-R_adaptation_parameters_range get_rate_based_adapt_parameter_range(
-    const double code_rate,
-    const std::vector<R_adaptation_parameters_map> &R_adapt_param_maps
+R_adaptation_parameters_values get_rate_based_adapt_parameters_ranges(
+    double code_rate,
+    const std::vector<R_adaptation_parameters_range>& R_adapt_param_ranges
 )
 {
-    std::vector<double> delta{};
-    for (size_t i = 0; i < R_adapt_param_maps.size(); i++)
+    std::vector<double> delta_rng{};
+    for (size_t i = 0; i < R_adapt_param_ranges.size(); i++)
     {
-        if (code_rate <= R_adapt_param_maps[i].code_rate)
+        if (code_rate <= R_adapt_param_ranges[i].code_rate)
         {
-            if (R_adapt_param_maps[i].delta_begin == R_adapt_param_maps[i].delta_end)   // Use only one specified value.
+            if (R_adapt_param_ranges[i].delta_begin == R_adapt_param_ranges[i].delta_end)   // Use only one specified value.
             {
-                delta.push_back(R_adapt_param_maps[i].delta_begin);
+                delta_rng.push_back(R_adapt_param_ranges[i].delta_begin);
                 break;
             }
-            
-            size_t steps = static_cast<size_t>(round((R_adapt_param_maps[i].delta_end - R_adapt_param_maps[i].delta_begin) 
-            / R_adapt_param_maps[i].delta_step)) + 1;    // including 'end' value 
-            double value {};
-            for (size_t j = 0; j < steps; j++) 
+
+            size_t steps = static_cast<size_t>(round((R_adapt_param_ranges[i].delta_end - R_adapt_param_ranges[i].delta_begin)
+                / R_adapt_param_ranges[i].delta_step)) + 1;    // including 'end' value 
+            double value{};
+            for (size_t j = 0; j < steps; j++)
             {
-                value = R_adapt_param_maps[i].delta_begin + static_cast<double>(j) * R_adapt_param_maps[i].delta_step;
-                delta.push_back(value);
+                value = R_adapt_param_ranges[i].delta_begin + static_cast<double>(j) * R_adapt_param_ranges[i].delta_step;
+                delta_rng.push_back(value);
             }
             break;
         }
     }
-    if (delta.empty())
+    if (delta_rng.empty())
     {
-        throw std::runtime_error("An error occurred while generating a delta range based on code rate(R).");
+        throw std::runtime_error(fmt::format("An error occurred while generating a delta range based "
+            "on code rate(R). Matrix code rate, R = {}.", code_rate));
     }
 
-    std::vector<double> efficiency;
-    for (size_t i = 0; i < R_adapt_param_maps.size(); i++)
+    std::vector<double> efficiency_rng;
+    for (size_t i = 0; i < R_adapt_param_ranges.size(); i++)
     {
-        if (code_rate <= R_adapt_param_maps[i].code_rate)
+        if (code_rate <= R_adapt_param_ranges[i].code_rate)
         {
-            if (R_adapt_param_maps[i].efficiency_begin == R_adapt_param_maps[i].efficiency_end)   // Use only one specified value.
+            if (R_adapt_param_ranges[i].efficiency_begin == R_adapt_param_ranges[i].efficiency_end)   // Use only one specified value.
             {
-                efficiency.push_back(R_adapt_param_maps[i].efficiency_begin);
+                efficiency_rng.push_back(R_adapt_param_ranges[i].efficiency_begin);
                 break;
             }
-            
-            size_t steps = static_cast<size_t>(round((R_adapt_param_maps[i].efficiency_end - R_adapt_param_maps[i].efficiency_begin) 
-            / R_adapt_param_maps[i].efficiency_step)) + 1;    // including 'end' value 
-            double value {};
-            for (size_t j = 0; j < steps; j++) 
+
+            size_t steps = static_cast<size_t>(round((R_adapt_param_ranges[i].efficiency_end - R_adapt_param_ranges[i].efficiency_begin)
+                / R_adapt_param_ranges[i].efficiency_step)) + 1;    // including 'end' value 
+            double value{};
+            for (size_t j = 0; j < steps; j++)
             {
-                value = R_adapt_param_maps[i].efficiency_begin + static_cast<double>(j) * R_adapt_param_maps[i].efficiency_step;
-                efficiency.push_back(value);
+                value = R_adapt_param_ranges[i].efficiency_begin + static_cast<double>(j) * R_adapt_param_ranges[i].efficiency_step;
+                efficiency_rng.push_back(value);
             }
             break;
         }
     }
-    if (efficiency.empty())
+    if (efficiency_rng.empty())
     {
-        throw std::runtime_error("An error occurred while generating a efficiency(f_EC) range based on code rate(R).");
+        throw std::runtime_error(fmt::format("An error occurred while generating an efficiency(f_EC) range based "
+            "on code rate(R). Matrix code rate, R = {}.", code_rate));
     }
 
-    return {.delta = delta, .efficiency = efficiency};
+    return { .delta = delta_rng, .efficiency = efficiency_rng };
+}
+
+// Get a set of matches 'QBER - delta(δ) - efficiency(f_EC)' based on code rate of matrix. 
+// R_QBER_adapt_params_maps must be sorted. Looks for the set of parameters where the
+// code rate is less than or equal to the specified in 'R_QBER_adapt_params_maps' rate.
+std::vector<QBER_adaptation_parameters> get_rate_based_QBER_adapt_parameters_maps(
+    double code_rate,
+    const std::vector<R_QBER_adaptation_parameters_map>& R_QBER_adapt_params_maps
+)
+{
+    std::vector<QBER_adaptation_parameters> QBER_adapt_params;
+    bool found = false;
+    double target_rate = -1.0;
+    for (size_t i = 0; i < R_QBER_adapt_params_maps.size(); i++)
+    {
+        const auto& current = R_QBER_adapt_params_maps[i];
+        if (!found)
+        {
+            if (code_rate <= current.code_rate)
+            {
+                found = true;
+                target_rate = current.code_rate;
+                QBER_adapt_params.push_back(current.QBER_adapt_params);
+            }
+        }
+        else    // Сontinue adding parameters until the found code rate changes.
+        {
+            if (current.code_rate == target_rate)
+                QBER_adapt_params.push_back(current.QBER_adapt_params);
+            else
+                break;
+        }
+    }
+    if (QBER_adapt_params.empty())
+    {
+        throw std::runtime_error(fmt::format("An error occurred while generating a QBER - delta" 
+            " - efficiency(f_EC) maps based on code rate(R). Matrix code rate, R = {}.", code_rate));
+    }
+    return QBER_adapt_params;
 }
 
 // Get all scaling factor range values used for all matrices regardless 
 // of their code rate(R).
-std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &scaling_factor_range)
+std::vector<double> get_scaling_factor_range_values(const scaling_factor_range& scaling_factor_range)
 {
     std::vector<double> scaling_factors;
     if (scaling_factor_range.begin == scaling_factor_range.end)   // Use only one specified value.
@@ -287,7 +330,7 @@ std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &
     else
     {
         size_t steps = static_cast<size_t>(round((scaling_factor_range.end - scaling_factor_range.begin) / scaling_factor_range.step)) + 1;   // including 'end' value 
-        for (size_t i = 0; i < steps; i++) 
+        for (size_t i = 0; i < steps; i++)
         {
             scaling_factors.push_back(scaling_factor_range.begin + static_cast<double>(i) * scaling_factor_range.step);
         }
@@ -303,8 +346,8 @@ std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &
 // R_scaling_factor_maps must be sorted. Looks for the first of parameters
 // where the code rate is less than or equal to the specified rate.
 double get_rate_based_scaling_factor_value(
-    const double code_rate,
-    const std::vector<R_scaling_factor_map> &R_scaling_factor_maps
+    double code_rate,
+    const std::vector<R_scaling_factor_map>& R_scaling_factor_maps
 )
 {
     int param_idx = -1;
@@ -317,13 +360,15 @@ double get_rate_based_scaling_factor_value(
         }
     }
     if (param_idx == -1)
-        throw std::runtime_error("An error occurred while searching scaling factor value on the basis of code rate(R).");
-
+    {
+        throw std::runtime_error(fmt::format("An error occurred while searching scaling factor value based "
+            "on code rate(R). Matrix code rate, R = {}.", code_rate));
+    }
     return R_scaling_factor_maps[param_idx].scaling_factor;
 }
 
 // Prepares input data for batch simulation.
-std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_paths)
+std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path>& matrix_paths)
 {
     XoshiroCpp::Xoshiro256PlusPlus prng(CFG.SIMULATION_SEED);
     std::vector<sim_input> sim_inputs(matrix_paths.size());
@@ -342,41 +387,69 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
         sim_inputs[i].matrix_path = matrix_paths[i];
 
         double code_rate = 1. - static_cast<double>(sim_inputs[i].matrix.check_nodes.size()) / static_cast<double>(sim_inputs[i].matrix.bit_nodes.size());
-        std::vector<double> QBER_values = get_rate_based_QBER_range(code_rate, CFG.R_QBER_MAPS);
 
-        // List of pairs (QBER, H_matrix_params)
+        // List of pairs (config_QBER, H_matrix_params)
         std::vector<std::pair<double, H_matrix_params>> qber_mat_params;
 
-        if(CFG.ENABLE_CODE_RATE_ADAPTATION)
+        if (CFG.ENABLE_CODE_RATE_ADAPTATION)
         {
-            R_adaptation_parameters_range rate_adapt_range = get_rate_based_adapt_parameter_range(code_rate, CFG.R_ADAPT_PARAMS_MAPS);
             if (CFG.ENABLE_UNTAINTED_PUNCTURING)
                 sim_inputs[i].matrix.punctured_bits_untainted = get_punctured_bits_untainted(matrix_paths[i], prng, sim_inputs[i].matrix);
-                
-            for (double QBER : QBER_values)
-            {
-                for (size_t j = 0; j < rate_adapt_range.delta.size(); j++)
-                {
-                    double delta = rate_adapt_range.delta[j];
-                    for (size_t k = 0; k < rate_adapt_range.efficiency.size(); k++)
-                    {
-                        double efficiency = rate_adapt_range.efficiency[k];
-                        H_matrix_params mat_params = adapt_code_rate(prng, sim_inputs[i].matrix, QBER, delta, efficiency);
-                        // Skip parameters combination. It will not be used in simulations.
-                        if (mat_params.punctured_bits.empty() && mat_params.shortened_bits.empty())
-                            continue;
 
-                        if (CFG.ENABLE_PRIVACY_MAINTENANCE) 
-                            mat_params.bits_to_remove = get_bits_positions_to_remove_rate_adapt(sim_inputs[i].matrix, mat_params);
-                        else 
+            if (CFG.USE_ADAPTATION_PARAMETERS_RANGES)
+            {
+                R_adaptation_parameters_values rate_adapt_vals = get_rate_based_adapt_parameters_ranges(code_rate, CFG.R_ADAPT_PARAMS_RANGES);
+
+                std::vector<double> QBER_values = get_rate_based_QBER_range(code_rate, CFG.R_QBER_RANGES);
+                for (double config_QBER : QBER_values)
+                {
+                    for (size_t j = 0; j < rate_adapt_vals.delta.size(); j++)
+                    {
+                        double delta = rate_adapt_vals.delta[j];
+                        for (size_t k = 0; k < rate_adapt_vals.efficiency.size(); k++)
                         {
-                            mat_params.bits_to_remove.reserve(mat_params.punctured_bits.size() + mat_params.shortened_bits.size());
-                            std::merge(mat_params.punctured_bits.begin(), mat_params.punctured_bits.end(),
-                                       mat_params.shortened_bits.begin(), mat_params.shortened_bits.end(),
-                                       std::back_inserter(mat_params.bits_to_remove));
+                            double efficiency = rate_adapt_vals.efficiency[k];
+                            H_matrix_params mat_params = adapt_code_rate(prng, sim_inputs[i].matrix, config_QBER, delta, efficiency);
+                            // Skip parameters combination. It will not be used in simulations.
+                            if (mat_params.punctured_bits.empty() && mat_params.shortened_bits.empty())
+                                continue;
+
+                            if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+                                mat_params.bits_to_remove = get_bits_positions_to_remove_rate_adapt(sim_inputs[i].matrix, mat_params);
+                            else
+                            {
+                                mat_params.bits_to_remove.reserve(mat_params.punctured_bits.size() + mat_params.shortened_bits.size());
+                                std::merge(mat_params.punctured_bits.begin(), mat_params.punctured_bits.end(),
+                                    mat_params.shortened_bits.begin(), mat_params.shortened_bits.end(),
+                                    std::back_inserter(mat_params.bits_to_remove));
+                            }
+                            qber_mat_params.emplace_back(config_QBER, mat_params);
                         }
-                        qber_mat_params.emplace_back(QBER, mat_params);
                     }
+                }
+            }
+            else    // Use maps: "code_rate" - "QBER" - "delta" - "efficiency"
+            {
+                std::vector<QBER_adaptation_parameters> QBER_adapt_params = get_rate_based_QBER_adapt_parameters_maps(code_rate, 
+                    CFG.R_QBER_ADAPT_PARAMS_MAPS);
+
+                for (QBER_adaptation_parameters params : QBER_adapt_params)
+                {
+                    H_matrix_params mat_params = adapt_code_rate(prng, sim_inputs[i].matrix, params.QBER, params.delta, params.efficiency);
+                    // Skip parameters combination. It will not be used in simulations.
+                    if (mat_params.punctured_bits.empty() && mat_params.shortened_bits.empty())
+                        continue;
+
+                    if (CFG.ENABLE_PRIVACY_MAINTENANCE)
+                        mat_params.bits_to_remove = get_bits_positions_to_remove_rate_adapt(sim_inputs[i].matrix, mat_params);
+                    else
+                    {
+                        mat_params.bits_to_remove.reserve(mat_params.punctured_bits.size() + mat_params.shortened_bits.size());
+                        std::merge(mat_params.punctured_bits.begin(), mat_params.punctured_bits.end(),
+                            mat_params.shortened_bits.begin(), mat_params.shortened_bits.end(),
+                            std::back_inserter(mat_params.bits_to_remove));
+                    }
+                    qber_mat_params.emplace_back(params.QBER, mat_params);
                 }
             }
         }
@@ -385,12 +458,14 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
             H_matrix_params mat_params{};
             if (CFG.ENABLE_PRIVACY_MAINTENANCE)
                 mat_params.bits_to_remove = get_bits_positions_to_remove(sim_inputs[i].matrix);
-            for (double QBER : QBER_values) 
+
+            std::vector<double> QBER_values = get_rate_based_QBER_range(code_rate, CFG.R_QBER_RANGES);
+            for (double config_QBER : QBER_values)
             {
-                qber_mat_params.emplace_back(QBER, mat_params);
+                qber_mat_params.emplace_back(config_QBER, mat_params);
             }
         }
-        
+
         std::vector<decoding_scaling_factors> scaling_combinations{};
         std::vector<double> primary_values{};
         if (CFG.DECODING_ALGORITHM == DEC_NMSA || CFG.DECODING_ALGORITHM == DEC_OMSA)
@@ -402,7 +477,7 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
                 double scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
                 primary_values.push_back(scaling_factor);      // Contains only one value.
             }
-            for (double primary : primary_values) 
+            for (double primary : primary_values)
             {
                 decoding_scaling_factors sf{};
                 sf.primary = primary;
@@ -413,7 +488,7 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
         {
             if (CFG.DECODING_ALG_PARAMS.primary.use_range)
                 primary_values = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.primary.range);
-            else 
+            else
             {
                 double scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.primary.maps);
                 primary_values.push_back(scaling_factor);
@@ -422,14 +497,14 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
             std::vector<double> secondary_values;
             if (CFG.DECODING_ALG_PARAMS.secondary.use_range)
                 secondary_values = get_scaling_factor_range_values(CFG.DECODING_ALG_PARAMS.secondary.range);
-            else 
+            else
             {
                 double scaling_factor = get_rate_based_scaling_factor_value(code_rate, CFG.DECODING_ALG_PARAMS.secondary.maps);
                 secondary_values.push_back(scaling_factor);
             }
-            for (double primary : primary_values) 
+            for (double primary : primary_values)
             {
-                for (double secondary : secondary_values) 
+                for (double secondary : secondary_values)
                 {
                     decoding_scaling_factors sf;
                     sf.primary = primary;
@@ -446,12 +521,12 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
 
         // Generation of all combinations
         sim_inputs[i].combinations.reserve(qber_mat_params.size() * scaling_combinations.size());
-        for (const auto& qmp : qber_mat_params) 
+        for (const auto& qmp : qber_mat_params)
         {
-            for (const auto& sf : scaling_combinations) 
+            for (const auto& sf : scaling_combinations)
             {
                 sim_combination comb;
-                comb.QBER = qmp.first;
+                comb.config_QBER = qmp.first;
                 comb.matrix_params = qmp.second;
                 comb.scaling_factors = sf;
                 sim_inputs[i].combinations.push_back(comb);
@@ -463,11 +538,11 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path> &matrix_pa
 
 // Runs a single QKD LDPC trial.
 trial_result run_trial(
-    const H_matrix &matrix, 
-    double QBER, 
+    const H_matrix& matrix,
+    double QBER,
     size_t seed,
-    const H_matrix_params &matrix_params,
-    const decoding_scaling_factors &scaling_factors
+    const H_matrix_params& matrix_params,
+    const decoding_scaling_factors& scaling_factors
 )
 {
     trial_result result;
@@ -503,10 +578,10 @@ trial_result run_trial(
 
 // Calculation of statistical characteristics and recording of the simulation result.
 void process_trials_results(
-    const std::vector<trial_result> &trial_results, 
-    const H_matrix &matrix,
-    const H_matrix_params &matrix_params,
-    sim_result &result
+    const std::vector<trial_result>& trial_results,
+    const H_matrix& matrix,
+    const H_matrix_params& matrix_params,
+    sim_result& result
 )
 {
     size_t trials_successful_decoding = 0;
@@ -557,7 +632,7 @@ void process_trials_results(
             out_key_length = static_cast<double>(num_bit_nodes - num_bits_to_remove);
         else
             out_key_length = static_cast<double>(num_bit_nodes);
-        
+
         const double MICROSECONDS_IN_SECOND = 1000000.;
         const double MICROSECONDS_IN_MILLISECOND = 1000.;
         double curr_throughput{};
@@ -570,12 +645,12 @@ void process_trials_results(
         {
             if (CFG.CONSIDER_RTT)
             {
-                curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / 
-                (static_cast<double>(trial_results[i].runtime.count()) + CFG.RTT * MICROSECONDS_IN_MILLISECOND);  // bits/s
+                curr_throughput = out_key_length * MICROSECONDS_IN_SECOND /
+                    (static_cast<double>(trial_results[i].runtime.count()) + CFG.RTT * MICROSECONDS_IN_MILLISECOND);  // bits/s
             }
             else
                 curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[i].runtime.count());  // bits/s
-            
+
             throughput_mean += curr_throughput;
             if (curr_throughput > throughput_max)
                 throughput_max = curr_throughput;
@@ -583,13 +658,13 @@ void process_trials_results(
                 throughput_min = curr_throughput;
         }
         throughput_mean /= static_cast<double>(CFG.TRIALS_NUMBER);
-        
+
         for (size_t i = 0; i < trial_results.size(); ++i)
         {
             if (CFG.CONSIDER_RTT)
             {
-                curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / 
-                (static_cast<double>(trial_results[i].runtime.count()) + CFG.RTT * MICROSECONDS_IN_MILLISECOND);  // bits/s
+                curr_throughput = out_key_length * MICROSECONDS_IN_SECOND /
+                    (static_cast<double>(trial_results[i].runtime.count()) + CFG.RTT * MICROSECONDS_IN_MILLISECOND);  // bits/s
             }
             else
                 curr_throughput = out_key_length * MICROSECONDS_IN_SECOND / static_cast<double>(trial_results[i].runtime.count());  // bits/s
@@ -602,24 +677,24 @@ void process_trials_results(
         result.throughput_max = static_cast<size_t>(throughput_max);
         result.throughput_min = static_cast<size_t>(throughput_min);
         result.throughput_mean = static_cast<size_t>(throughput_mean);
-        result.throughput_std_dev = static_cast<size_t>(throughput_std_dev);        
+        result.throughput_std_dev = static_cast<size_t>(throughput_std_dev);
     }
-    
+
     result.iter_success_dec_alg_max = iter_success_dec_alg_max;
     result.iter_success_dec_alg_min = (iter_success_dec_alg_min == std::numeric_limits<size_t>::max()) ? 0 : static_cast<size_t>(iter_success_dec_alg_min);
     result.iter_success_dec_alg_mean = iter_success_dec_alg_mean;
     result.iter_success_dec_alg_std_dev = iter_success_dec_alg_std_dev;
 
     result.ratio_trials_success_ldpc = static_cast<double>(trials_successful_ldpc) / static_cast<double>(CFG.TRIALS_NUMBER);
-    result.ratio_trials_success_dec_alg = static_cast<double>(trials_successful_decoding) / static_cast<double>(CFG.TRIALS_NUMBER);            
+    result.ratio_trials_success_dec_alg = static_cast<double>(trials_successful_decoding) / static_cast<double>(CFG.TRIALS_NUMBER);
 }
 
 // Distributes all combinations of the experiment evenly across the CPU threads and runs it.
-std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &sim_in)
+std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input>& sim_in)
 {
     using namespace indicators;
     size_t sim_total = 0;
-    for (size_t i = 0; i < sim_in.size(); ++i) 
+    for (size_t i = 0; i < sim_in.size(); ++i)
     {
         sim_total += sim_in[i].combinations.size();
     }
@@ -631,14 +706,14 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
         option::Remainder{"-"}, option::End{"]"}, option::PrefixText{"PROGRESS"},
         option::ForegroundColor{Color::cyan}, option::ShowElapsedTime{true},
         option::ShowRemainingTime{true}, option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
-        option::MaxProgress{trials_total}};
+        option::MaxProgress{trials_total} };
 
     std::vector<sim_result> sim_results(sim_total);
     std::vector<trial_result> trial_results(CFG.TRIALS_NUMBER);
     XoshiroCpp::Xoshiro256PlusPlus prng(CFG.SIMULATION_SEED);
     std::uniform_int_distribution<size_t> distribution(0, std::numeric_limits<size_t>::max());
     std::vector<size_t> seeds(CFG.TRIALS_NUMBER);
-    for (size_t i = 0; i < seeds.size(); ++i) 
+    for (size_t i = 0; i < seeds.size(); ++i)
     {
         seeds[i] = distribution(prng);
     }
@@ -647,25 +722,25 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
     size_t curr_sim = 0;
     size_t iteration = 0;
 
-    for (size_t i = 0; i < sim_in.size(); ++i) 
+    for (size_t i = 0; i < sim_in.size(); ++i)
     {
-        const H_matrix &matrix = sim_in[i].matrix;
+        const H_matrix& matrix = sim_in[i].matrix;
         std::string matrix_filename = sim_in[i].matrix_path.filename().string();
 
-        for (auto& comb : sim_in[i].combinations) 
+        for (auto& comb : sim_in[i].combinations)
         {
-            double QBER = comb.QBER;
+            double config_QBER = comb.config_QBER;
             H_matrix_params matrix_params = comb.matrix_params;
             decoding_scaling_factors scaling_factors = comb.scaling_factors;
 
             iteration += CFG.TRIALS_NUMBER;
             bar.set_option(option::PostfixText{
-                std::to_string(iteration) + "/" + std::to_string(trials_total)});
+                std::to_string(iteration) + "/" + std::to_string(trials_total) });
 
             pool.detach_loop<size_t>(0, CFG.TRIALS_NUMBER,
-                [&matrix, &QBER, &matrix_params, &scaling_factors, &trial_results, &seeds, &curr_sim, &bar](size_t n) 
+                [&matrix, &config_QBER, &matrix_params, &scaling_factors, &trial_results, &seeds, &curr_sim, &bar](size_t n)
                 {
-                    trial_results[n] = run_trial(matrix, QBER, (seeds[n] + curr_sim), matrix_params, scaling_factors);
+                    trial_results[n] = run_trial(matrix, config_QBER, (seeds[n] + curr_sim), matrix_params, scaling_factors);
                     bar.tick();
                 });
             pool.wait();
@@ -680,6 +755,7 @@ std::vector<sim_result> QKD_LDPC_batch_simulation(const std::vector<sim_input> &
             sim_results[curr_sim].punctured_fraction = matrix_params.punctured_fraction;
             sim_results[curr_sim].shortened_fraction = matrix_params.shortened_fraction;
             sim_results[curr_sim].adapted_code_rate = matrix_params.adapted_code_rate;
+            sim_results[curr_sim].config_QBER = config_QBER;
             sim_results[curr_sim].accurate_QBER = trial_results[0].accurate_QBER;
             sim_results[curr_sim].scaling_factors = scaling_factors;
 

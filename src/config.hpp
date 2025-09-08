@@ -55,7 +55,7 @@ struct decoding_scaling_factors
 
 // Structure that stores code rate value that correspond to a range of QBER values from 'QBER_begin' to 'QBER_end' in 'QBER_step' increments.
 // If 'QBER_begin'=='QBER_end', only one value is used and 'step' is not taken into account.
-struct R_QBER_map
+struct R_QBER_range
 {
     double code_rate{};
     double QBER_begin{};
@@ -67,7 +67,7 @@ struct R_QBER_map
 // to 'delta_end/efficiency_end' in 'delta_step/efficiency_step' increments.
 // If 'delta_begin/efficiency_begin'=='delta_end/efficiency_end', only one value is used and 'step' is not taken into account.
 // https://arxiv.org/pdf/1007.1616
-struct R_adaptation_parameters_map
+struct R_adaptation_parameters_range
 {
     double code_rate{};
     double delta_begin{};
@@ -78,11 +78,26 @@ struct R_adaptation_parameters_map
     double efficiency_step{};
 };
 
-// Ranges of values for δ and f_EC for a specific code rate, calculated based on the structure 'R_adaptation_parameters_map'.
-struct R_adaptation_parameters_range
+// Ranges of values for δ and f_EC for a specific code rate, calculated based on the structure 'R_adaptation_parameters_range'.
+struct R_adaptation_parameters_values
 {
     std::vector<double> delta{};
     std::vector<double> efficiency{};
+};
+
+// Structure for 'R_QBER_adaptation_parameters_map' that stores δ and f_EC values that corresponds to QBER value.
+struct QBER_adaptation_parameters
+{
+    double QBER{};
+    double delta{};
+    double efficiency{};
+};
+
+// Structure that stores QBER with code rate adaptation parameters that corresponds to code rate(R) value from config file.
+struct R_QBER_adaptation_parameters_map
+{
+    double code_rate{};
+    QBER_adaptation_parameters QBER_adapt_params{};
 };
 
 struct config_data
@@ -158,7 +173,7 @@ struct config_data
     double DECODING_ALG_MSG_LLR_THRESHOLD{};
 
     // Code rate and QBER correspondence set.
-    std::vector<R_QBER_map> R_QBER_MAPS{};
+    std::vector<R_QBER_range> R_QBER_RANGES{};
 
     // Enables code rate modulation of pre-built codes by applying puncturing and shortening (https://arxiv.org/abs/1007.1616).
     bool ENABLE_CODE_RATE_ADAPTATION{};
@@ -166,8 +181,14 @@ struct config_data
     // Enables the use of the untainted puncturing when determining the positions of punctured bits (https://arxiv.org/pdf/1103.6149).
     bool ENABLE_UNTAINTED_PUNCTURING{};
 
-    // Code rate and δ with f_EC correspondence set for rate modulation.
-    std::vector<R_adaptation_parameters_map> R_ADAPT_PARAMS_MAPS{};
+    // If 'true', then 'R_ADAPT_PARAMS_RANGES' is used, otherwise 'R_QBER_ADAPT_PARAMS_MAPS'.
+    bool USE_ADAPTATION_PARAMETERS_RANGES{};
+
+    // Code rate correspondence set of δ and f_EC ranges for rate modulation.
+    std::vector<R_adaptation_parameters_range> R_ADAPT_PARAMS_RANGES{};
+
+    // Code rate correspondence set of QBER (instead of QBER values from 'R_QBER_RANGES') with δ and f_EC maps for rate modulation. 
+    std::vector<R_QBER_adaptation_parameters_map> R_QBER_ADAPT_PARAMS_MAPS{};
 };
 
 extern config_data CFG;

@@ -21,7 +21,7 @@
 
 struct sim_combination 
 {
-    double QBER;                
+    double config_QBER;                             // QBER value specified in the configuration file.    
     H_matrix_params matrix_params;                  // Matrix parameters after modulation.
     decoding_scaling_factors scaling_factors;       // Scaling factors for NMSA, OMSA, ANMSA and AOMSA algorithms. 
 };
@@ -52,7 +52,8 @@ struct sim_result
     double punctured_fraction{};                    // Fraction of punctured symbols (π) in modulated code.
     double shortened_fraction{};                    // Fraction of shortened symbols (σ) in modulated code.
     double adapted_code_rate{};                     // Modulated code rate (R).
-    double accurate_QBER{};                         // An accurate QBER that corresponds to the number of errors in the key.
+    double config_QBER;                             // QBER value specified in the configuration file. 
+    double accurate_QBER{};                         // An accurate QBER that corresponds to the number of errors in the key (calculated based on the key length and 'config_QBER').
     decoding_scaling_factors scaling_factors{};     // Scaling factor(s) applied in NMSA, OMSA (or ANMSA, AOMSA) decoding algorithm.
     size_t iter_success_dec_alg_max{};              // The maximum number of iterations of the decoding algorithm in which Alice's syndrome matched Bob's syndrome (i.e. successful).
     size_t iter_success_dec_alg_min{};              // The minimum number of iterations of the decoding algorithm.
@@ -73,14 +74,24 @@ fs::path write_file(
 );
 
 std::vector<double> get_rate_based_QBER_range(
-    const double code_rate,
-    const std::vector<R_QBER_map> &R_QBER_maps
+    double code_rate,
+    const std::vector<R_QBER_range> &R_QBER_ranges
+);
+
+R_adaptation_parameters_values get_rate_based_adapt_parameters_ranges(
+    double code_rate,
+    const std::vector<R_adaptation_parameters_range> &R_adapt_param_ranges
+);
+
+std::vector<QBER_adaptation_parameters> get_rate_based_QBER_adapt_parameters_maps(
+    double code_rate,
+    const std::vector<R_QBER_adaptation_parameters_map> &R_QBER_adapt_params_maps
 );
 
 std::vector<double> get_scaling_factor_range_values(const scaling_factor_range &scaling_factor_range);
 
 double get_rate_based_scaling_factor_value(
-    const double code_rate,
+    double code_rate,
     const std::vector<R_scaling_factor_map> &R_scaling_factor_maps
 );
 
