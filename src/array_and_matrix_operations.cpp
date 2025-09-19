@@ -982,17 +982,16 @@ std::vector<second_order_neighbors> get_second_order_neighbors(const H_matrix &m
     for (int i = 0; i < num_bit_nodes; ++i) 
     {
         N2_order_list[i].bit_node_idx = i;
-        std::set<int>& omega = N2_order_list[i].neighbors;  // Reference to a set of neighbors
 
         // Set union: add all bit nodes connected to adjacent check nodes of the current bit node
         for (int check_node_idx : bit_nodes[i]) 
         {
             // Note: set can only store unique values, we can't add the same value multiple times
-            omega.insert(check_nodes[check_node_idx].begin(), check_nodes[check_node_idx].end());
+            N2_order_list[i].neighbors.insert(check_nodes[check_node_idx].begin(), check_nodes[check_node_idx].end());
         }
 
         // Delete index of the current bit node
-        omega.erase(i);
+        N2_order_list[i].neighbors.erase(i);
     }
     return N2_order_list;
 }
