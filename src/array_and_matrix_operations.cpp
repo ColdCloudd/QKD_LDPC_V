@@ -1047,7 +1047,6 @@ std::vector<int> select_punctured_bits_untainted(
         }
 
         // Step 3: Select a random bit node from candidates
-        XoshiroCpp::Xoshiro256PlusPlus prng;
         std::uniform_int_distribution<size_t> distribution(0, candidate_nodes.size() - 1);
         size_t idx = distribution(prng);
         int chosen_idx = candidate_nodes[idx];
