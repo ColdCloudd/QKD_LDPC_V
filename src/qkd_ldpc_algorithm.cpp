@@ -1142,9 +1142,12 @@ LDPC_result QKD_LDPC_RATE_ADAPT(
     size_t p = 0;   // p + s + n = num_bit_nodes
     size_t s = 0;
     size_t n = 0;
+    size_t num_punct_bits = matrix_params.punctured_bits.size();
+    size_t num_short_bits = matrix_params.shortened_bits.size();
+
     for (int i = 0; i < num_bit_nodes; ++i)
     {
-        if (matrix_params.punctured_bits[p] == i)
+        if (p < num_punct_bits && matrix_params.punctured_bits[p] == i)
         {
             // Punctured bits come from RNG, independently of the both sides.
             alice_bit_array_extended[i] = distribution(prng);
@@ -1152,7 +1155,7 @@ LDPC_result QKD_LDPC_RATE_ADAPT(
             apriori_llr[i] = ALMOST_ZERO;   // To avoid division by zero.
             ++p;
         }
-        else if (matrix_params.shortened_bits[s] == i)
+        else if (s < num_short_bits && matrix_params.shortened_bits[s] == i)
         {
             // Shortened symbols are the ones which have values exactly
             // known by Alice and Bob.
