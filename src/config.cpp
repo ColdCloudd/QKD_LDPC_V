@@ -74,7 +74,7 @@ void print_config_info(
     fmt::print(fg(fmt::color::yellow), "Decoding algorithm maximum iterations: {}\n", fmt::styled(cfg.DECODING_ALG_MAX_ITERATIONS, fg(fmt::color::crimson)));
 
     std::string mat_format =
-        (cfg.MATRIX_FORMAT == MAT_SPARSE_UNCOMPRESSED) ? "Uncompressed" :
+        (cfg.MATRIX_FORMAT == MAT_SPARSE_UNCOMPRESSED) ? "Sparse (uncompressed)" :
         (cfg.MATRIX_FORMAT == MAT_SPARSE_ALIST) ? "Sparse (alist)" :
         (cfg.MATRIX_FORMAT == MAT_SPARSE_1) ? "Sparse (1)" :
         (cfg.MATRIX_FORMAT == MAT_SPARSE_2) ? "Sparse (2)" : "Unknown";
