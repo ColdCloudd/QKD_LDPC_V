@@ -375,8 +375,8 @@ std::vector<sim_input> prepare_sim_inputs(const std::vector<fs::path>& matrix_pa
     for (size_t i = 0; i < matrix_paths.size(); i++)
     {
         // Reading the matrix depending on the format
-        if (CFG.MATRIX_FORMAT == MAT_UNCOMPRESSED)
-            sim_inputs[i].matrix = read_uncompressed_matrix(matrix_paths[i]);
+        if (CFG.MATRIX_FORMAT == MAT_SPARSE_UNCOMPRESSED)
+            sim_inputs[i].matrix = read_sparse_uncompressed_matrix(matrix_paths[i]);
         else if (CFG.MATRIX_FORMAT == MAT_SPARSE_ALIST)
             sim_inputs[i].matrix = read_sparse_matrix_alist(matrix_paths[i]);
         else if (CFG.MATRIX_FORMAT == MAT_SPARSE_1)

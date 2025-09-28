@@ -760,8 +760,8 @@ H_matrix read_sparse_matrix_2(const fs::path &matrix_path)
     return matrix_out;
 }
 
-// Read uncompressed matrix from file.
-H_matrix read_uncompressed_matrix(const fs::path &matrix_path)
+// Read uncompressed sparse matrix from file.
+H_matrix read_sparse_uncompressed_matrix(const fs::path &matrix_path)
 {
     std::vector<std::string> line_vec;
     std::ifstream file(matrix_path);

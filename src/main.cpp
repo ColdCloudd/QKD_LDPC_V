@@ -5,17 +5,17 @@ namespace fs = std::filesystem;
 
 #ifdef USE_CURRENT_DIR
 const fs::path CONFIG_DIR_PATH = std::filesystem::current_path() / "configs";
-const fs::path UNCOMPRESSED_MATRIX_DIR_PATH = std::filesystem::current_path() / "matrices" / "uncompressed_matrices";
-const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = std::filesystem::current_path() / "matrices" / "sparse_matrices_alist";
-const fs::path SPARSE_MATRIX_1_DIR_PATH = std::filesystem::current_path() / "matrices" / "sparse_matrices_1";
-const fs::path SPARSE_MATRIX_2_DIR_PATH = std::filesystem::current_path() / "matrices" / "sparse_matrices_2";
+const fs::path SPARSE_UNCOMPRESSED_MATRIX_DIR_PATH = std::filesystem::current_path() / "sparse_matrices" / "matrices_uncompressed";
+const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = std::filesystem::current_path() / "sparse_matrices" / "matrices_alist";
+const fs::path SPARSE_MATRIX_1_DIR_PATH = std::filesystem::current_path() / "sparse_matrices" / "matrices_1";
+const fs::path SPARSE_MATRIX_2_DIR_PATH = std::filesystem::current_path() / "sparse_matrices" / "matrices_2";
 const fs::path RESULTS_DIR_PATH = std::filesystem::current_path() / "results";
 #else
 const fs::path CONFIG_DIR_PATH = fs::path(SOURCE_DIR) / "configs";
-const fs::path UNCOMPRESSED_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "matrices" / "uncompressed_matrices";
-const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = fs::path(SOURCE_DIR) / "matrices" / "sparse_matrices_alist";
-const fs::path SPARSE_MATRIX_1_DIR_PATH = fs::path(SOURCE_DIR) / "matrices" / "sparse_matrices_1";
-const fs::path SPARSE_MATRIX_2_DIR_PATH = fs::path(SOURCE_DIR) / "matrices" / "sparse_matrices_2";
+const fs::path SPARSE_UNCOMPRESSED_MATRIX_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices" / "matrices_uncompressed";
+const fs::path SPARSE_MATRIX_ALIST_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices" / "matrices_alist";
+const fs::path SPARSE_MATRIX_1_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices" / "matrices_1";
+const fs::path SPARSE_MATRIX_2_DIR_PATH = fs::path(SOURCE_DIR) / "sparse_matrices" / "matrices_2";
 const fs::path RESULTS_DIR_PATH = fs::path(SOURCE_DIR) / "results";
 #endif
 
@@ -81,11 +81,11 @@ int main(int argc, char* argv[])
                 "decoding_algorithm_max_iterations - The maximum number of iterations of the\n"
                 "   decoding algorithm.\n\n"
 
-                "matrix_format - Matrix representation format in read files.Options:\n"
-                "   0) Uncompressed matrices (folder uncompressed_matrices).\n"
-                "   1) Sparse matrices in 'alist' format (folder sparse_matrices_alist).\n" 
+                "matrix_format - Sparse matrix representation format in read files. Options:\n"
+                "   0) Uncompressed matrices (folder matrices_uncompressed).\n"
+                "   1) Matrices in 'alist' format (folder matrices_alist).\n"
                 "       About 'alist' format: https://rptu.de/channel-codes/matrix-file-formats.\n"
-                "   2) Sparse matrices in format specified below (folder sparse_matrices_1).\n"
+                "   2) Matrices in format specified below (folder matrices_1).\n"
                 "       The first line contains the block length, N. The second line defines the\n"
                 "       number of parity-checks, M. The third line defines the number of columns\n"
                 "       of the compressed parity-check matrix. The following M lines are then the\n"
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
                 "       (1 ... N) of 1's in the compressed row of parity-check matrix. If not all\n"
                 "       column entries are used, the column is filled up with 0's. Program for\n"
                 "       matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.\n"
-                "   3) Sparse matrices in format specified below (folder sparse_matrices_2).\n"
+                "   3) Matrices in format specified below (folder matrices_2).\n"
                 "       The first line contains two numbers: the first is the block length (N)\n"
                 "       and the second is the number of parity-checks (M). The following M \n"
                 "       lines are then the compressed parity-check matrix. Each of the M rows\n"
@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
             CFG = parse_config_data(config_paths[i]);
             print_config_info(CFG, config_paths[i].filename().string(), i + 1);
             fs::path matrix_dir_path;
-            if (CFG.MATRIX_FORMAT == MAT_UNCOMPRESSED)
-                matrix_dir_path = UNCOMPRESSED_MATRIX_DIR_PATH;
+            if (CFG.MATRIX_FORMAT == MAT_SPARSE_UNCOMPRESSED)
+                matrix_dir_path = SPARSE_UNCOMPRESSED_MATRIX_DIR_PATH;
             else if (CFG.MATRIX_FORMAT == MAT_SPARSE_ALIST)
                 matrix_dir_path = SPARSE_MATRIX_ALIST_DIR_PATH;
             else if (CFG.MATRIX_FORMAT == MAT_SPARSE_1)

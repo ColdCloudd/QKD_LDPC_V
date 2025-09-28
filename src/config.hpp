@@ -140,20 +140,24 @@ struct config_data
     size_t DECODING_ALG_MAX_ITERATIONS{};
 
     // Four options:
-    // 0.   Uncompressed matrices (folder uncompressed_matrices).
-    // 1.   Sparse matrices in 'alist' format (folder sparse_matrices_alist).
-    //      About 'alist' format: https://rptu.de/channel-codes/matrix-file-formats.
-    // 2.   Sparse matrices in format specified below (folder sparse_matrices_1).
-    //      The first line contains the block length, N. The second line defines the number of parity-checks, M.
-    //      The third line defines the number of columns of the compressed parity-check matrix. 
-    //      The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
-    //      indices (1 ... N) of 1's in the compressed row of parity-check matrix. If not all column entries are used, 
-    //      the column is filled up with 0's. Program for matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
-    // 3.   Sparse matrices in format specified below (folder sparse_matrices_2).
-    //      The first line contains two numbers: the first is the block length (N) and the second is the number of parity-checks (M).
-    //      The following M lines are then the compressed parity-check matrix. Each of the M rows contains the 
-    //      indices (0 ... N-1) of 1's in the compressed row of parity-check matrix. 
-    //      The next N lines contains the indices (0 ... M-1) of 1's in the compressed column of parity-check matrix.
+    //    0) Uncompressed matrices (folder matrices_uncompressed).
+    //    1) Matrices in 'alist' format (folder matrices_alist).
+    //        About 'alist' format: https://rptu.de/channel-codes/matrix-file-formats.
+    //    2) Matrices in format specified below (folder matrices_1).
+    //        The first line contains the block length, N. The second line defines the
+    //        number of parity-checks, M. The third line defines the number of columns
+    //        of the compressed parity-check matrix. The following M lines are then the
+    //        compressed parity-check matrix. Each of the M rows contains the indices
+    //        (1 ... N) of 1's in the compressed row of parity-check matrix. If not all
+    //        column entries are used, the column is filled up with 0's. Program for
+    //        matrix generation: https://www.inference.org.uk/mackay/PEG_ECC.html.
+    //    3) Matrices in format specified below (folder matrices_2).
+    //        The first line contains two numbers: the first is the block length (N)
+    //        and the second is the number of parity-checks (M). The following M 
+    //        lines are then the compressed parity-check matrix. Each of the M rows
+    //        contains the indices (0 ... N-1) of 1's in the compressed row of
+    //        parity-check matrix. The next N lines contains the indices (0 ... M-1)
+    //        of 1's in the compressed column of parity-check matrix.
     size_t MATRIX_FORMAT{};
 
     // Output intermediate results of LDPC operation to the console.
@@ -195,7 +199,7 @@ extern config_data CFG;
 const double EPSILON = 1e-6;
 
 inline constexpr size_t DEC_SPA = 0, DEC_SPA_APPROX = 1, DEC_NMSA = 2, DEC_OMSA = 3, DEC_ANMSA = 4, DEC_AOMSA = 5;
-inline constexpr size_t MAT_UNCOMPRESSED = 0, MAT_SPARSE_ALIST = 1, MAT_SPARSE_1 = 2, MAT_SPARSE_2 = 3;
+inline constexpr size_t MAT_SPARSE_UNCOMPRESSED = 0, MAT_SPARSE_ALIST = 1, MAT_SPARSE_1 = 2, MAT_SPARSE_2 = 3;
 
 scaling_factor_range parse_scaling_factor_range(const json& scaling_factor_range);
 

@@ -23,7 +23,7 @@ int main()
         CFG.TRACE_DECODING_ALG = true;
         CFG.TRACE_DECODING_ALG_LLR = true;
         
-        H_matrix matrix = read_uncompressed_matrix(EXAMPLE_DENSE_MATRIX_PATH);
+        H_matrix matrix = read_sparse_uncompressed_matrix(EXAMPLE_DENSE_MATRIX_PATH);
 
         // Page 33, example 2.5: https://www.researchgate.net/publication/228977165_Introducing_Low-Density_Parity-Check_Codes
         std::vector<int> alice_bit_array{0, 0, 1, 0, 1, 1};

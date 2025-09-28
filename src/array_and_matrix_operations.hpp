@@ -121,7 +121,7 @@ H_matrix read_sparse_matrix_1(const fs::path &matrix_path);
 
 H_matrix read_sparse_matrix_2(const fs::path &matrix_path);
 
-H_matrix read_uncompressed_matrix(const fs::path &matrix_path);
+H_matrix read_sparse_uncompressed_matrix(const fs::path &matrix_path);
 
 void fill_random_bits(
     XoshiroCpp::Xoshiro256PlusPlus &prng,
