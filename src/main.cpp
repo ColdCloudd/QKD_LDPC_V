@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
                 "decoding_algorithm_msg_llr_threshold - The LLR value to which the message value is\n"
                 "   limited.\n\n"
 
-                "code_rate_QBER_maps - Code rate(R) and QBER correspondence set. The 'code_rate'\n"
+                "code_rate_QBER_ranges - Code rate(R) and QBER correspondence set. The 'code_rate'\n"
                 "   value of parity-check matrix correspond to a range of QBER values from\n"
                 "   'begin' to 'end' in 'step' increments. If 'begin' == 'end', only one value\n"
                 "   will be used, and 'step' will not be taken into account.\n\n"

@@ -1067,7 +1067,7 @@ std::vector<int> select_punctured_bits_untainted(
     return punct_nodes;
 }
 
-// Gets a list of indexes of “untainted” bits intended for puncturing.
+// Returns a list of indexes of “untainted” bits intended for puncturing.
 // This function attempts to read a previously saved list of indexes of 
 // untainted bits from a file with the extension `.untp` located next to the
 // specified matrix (extension `.mtrx`). If the file exists and contains valid
