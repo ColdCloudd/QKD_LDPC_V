@@ -1,13 +1,13 @@
 {
     "threads_number": 1,
-    "trials_number": 1000,
+    "trials_number": 10000,
     "use_config_simulation_seed": true,
     "simulation_seed": 5555,
     "enable_privacy_maintenance": true,
     "enable_throughput_measurement": true,
     "throughput_measurement_parameters": 
     {
-        "consider_RTT": true,
+        "consider_RTT": false,
         "RTT": 0.5
     },
     "decoding_algorithm": 5,
@@ -82,7 +82,7 @@
     "trace_decoding_algorithm_llr": false,
     "enable_decoding_algorithm_msg_llr_threshold": true,
     "decoding_algorithm_msg_llr_threshold": 100.0,
-    "code_rate_QBER_maps": 
+    "code_rate_QBER_ranges": 
     [
         {"code_rate": 0.905, "QBER": {"begin": 0.0076, "end": 0.0076, "step": 0.0005}},
         {"code_rate": 0.855, "QBER": {"begin": 0.0157, "end": 0.0157, "step": 0.0005}},
@@ -95,11 +95,44 @@
         {"code_rate": 0.505, "QBER": {"begin": 0.0914, "end": 0.0914, "step": 0.0005}}
     ],
     "enable_code_rate_adaptation": false,
-    "enable_untainted_puncturing": false,
-    "code_rate_adaptation_parameters_maps": 
-    [
-        {"code_rate": 0.805, "delta": {"begin": 0.05, "end": 0.2, "step": 0.05}, "efficiency": {"begin": 1.18, "end": 2.0, "step": 0.01}},
-        {"code_rate": 0.655, "delta": {"begin": 0.05, "end": 0.2, "step": 0.05}, "efficiency": {"begin": 1.13, "end": 1.28, "step": 0.01}},
-        {"code_rate": 0.505, "delta": {"begin": 0.05, "end": 0.2, "step": 0.05}, "efficiency": {"begin": 1.12, "end": 1.28, "step": 0.01}}
-    ]
+    "code_rate_adaptation_parameters":
+    {
+        "enable_untainted_puncturing": true,
+        "use_adaptation_parameters_ranges": false,
+        "code_rate_adaptation_parameters_ranges": 
+        [
+            {"code_rate": 0.805, "delta": {"begin": 0.01, "end": 0.25, "step": 0.01}, "efficiency": {"begin": 1.2, "end": 1.6, "step": 0.01}},
+            {"code_rate": 0.655, "delta": {"begin": 0.05, "end": 0.2, "step": 0.05}, "efficiency": {"begin": 1.13, "end": 1.28, "step": 0.01}},
+            {"code_rate": 0.505, "delta": {"begin": 0.05, "end": 0.2, "step": 0.05}, "efficiency": {"begin": 1.12, "end": 1.28, "step": 0.01}}
+        ],
+        "code_rate_QBER_adaptation_parameters_maps": 
+        [
+            {"code_rate": 0.805, "QBER": 0.0076, "delta": 0.1, "efficiency": 1.85},
+            {"code_rate": 0.805, "QBER": 0.0116, "delta": 0.15, "efficiency": 1.39},
+            {"code_rate": 0.805, "QBER": 0.0156, "delta": 0.08, "efficiency": 1.37},
+            {"code_rate": 0.805, "QBER": 0.0196, "delta": 0.03, "efficiency": 1.28},
+            {"code_rate": 0.805, "QBER": 0.0236, "delta": 0.01, "efficiency": 1.21},
+            {"code_rate": 0.805, "QBER": 0.0276, "delta": 0.11, "efficiency": 1.2},
+            {"code_rate": 0.805, "QBER": 0.0316, "delta": 0.22, "efficiency": 1.22},
+            {"code_rate": 0.655, "QBER": 0.0368, "delta": 0.12, "efficiency": 1.22},
+            {"code_rate": 0.655, "QBER": 0.0408, "delta": 0.1, "efficiency": 1.2},
+            {"code_rate": 0.655, "QBER": 0.0448, "delta": 0.06, "efficiency": 1.18},
+            {"code_rate": 0.655, "QBER": 0.0488, "delta": 0.06, "efficiency": 1.17},
+            {"code_rate": 0.655, "QBER": 0.0528, "delta": 0.01, "efficiency": 1.16},
+            {"code_rate": 0.655, "QBER": 0.0568, "delta": 0.06, "efficiency": 1.16},
+            {"code_rate": 0.655, "QBER": 0.0608, "delta": 0.11, "efficiency": 1.17},
+            {"code_rate": 0.655, "QBER": 0.0648, "delta": 0.16, "efficiency": 1.17},
+            {"code_rate": 0.655, "QBER": 0.0688, "delta": 0.23, "efficiency": 1.19},
+            {"code_rate": 0.505, "QBER": 0.0734, "delta": 0.12, "efficiency": 1.18},
+            {"code_rate": 0.505, "QBER": 0.0774, "delta": 0.09, "efficiency": 1.17},
+            {"code_rate": 0.505, "QBER": 0.0814, "delta": 0.08, "efficiency": 1.16},
+            {"code_rate": 0.505, "QBER": 0.0854, "delta": 0.04, "efficiency": 1.15},
+            {"code_rate": 0.505, "QBER": 0.0894, "delta": 0.01, "efficiency": 1.14},
+            {"code_rate": 0.505, "QBER": 0.0934, "delta": 0.03, "efficiency": 1.14},
+            {"code_rate": 0.505, "QBER": 0.0974, "delta": 0.06, "efficiency": 1.14},
+            {"code_rate": 0.505, "QBER": 0.1014, "delta": 0.1, "efficiency": 1.15},
+            {"code_rate": 0.505, "QBER": 0.1054, "delta": 0.13, "efficiency": 1.16},
+            {"code_rate": 0.505, "QBER": 0.1094, "delta": 0.13, "efficiency": 1.15}
+        ]
+    }
 }
