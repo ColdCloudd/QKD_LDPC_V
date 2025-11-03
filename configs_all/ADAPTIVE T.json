@@ -1,6 +1,6 @@
 {
     "threads_number": 1,
-    "trials_number": 10000,
+    "trials_number": 1000,
     "use_config_simulation_seed": true,
     "simulation_seed": 5555,
     "enable_privacy_maintenance": true,
@@ -8,7 +8,7 @@
     "throughput_measurement_parameters": 
     {
         "consider_RTT": true,
-        "RTT": 0.5
+        "RTT": 0.4
     },
     "decoding_algorithm": 5,
     "min_sum_normalized_parameters":
