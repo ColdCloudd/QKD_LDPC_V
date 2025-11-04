@@ -8,7 +8,6 @@ services:
       - ./sparse_matrices:/app/sparse_matrices
       - ./results:/app/results
       - ./configs:/app/configs
-      - ./configs_all:/app/configs_all
     working_dir: /app
     stdin_open: true
     tty: true
