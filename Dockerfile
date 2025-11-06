@@ -30,4 +30,4 @@ WORKDIR /app
 
 COPY --from=builder /app/build/QKD_LDPC /app/QKD_LDPC
 
-CMD ["./QKD_LDPC"]
+ENTRYPOINT ["/app/QKD_LDPC"]
