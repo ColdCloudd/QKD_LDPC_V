@@ -41,7 +41,7 @@ This project uses a multi-stage Dockerfile for building an optimized runtime ima
 
 3. Run the container:
    ```
-   sudo docker compose run --rm qkd_ldpc
+   sudo docker compose run -it --rm qkd_ldpc
    ```
    - Use Ctrl-C to interrupt program execution.
 
@@ -53,7 +53,8 @@ To view the full help message with all configuration parameters:
 ```
 ./QKD_LDPC --help   #without Docker
 ```
+or
 ```
-sudo docker compose run --rm qkd_ldpc --help   #with Docker Compose
+sudo docker compose run -it --rm qkd_ldpc --help   #with Docker Compose
 ```
 (or `-help`).
