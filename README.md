@@ -14,10 +14,8 @@ To build and run the project locally without Docker, ensure you have CMake (vers
 
 2. Create a build directory and compile:
    ```
-   mkdir build
-   cd build
-   cmake .. -DCMAKE_BUILD_TYPE=Release
-   cmake --build . --parallel $(nproc)  # Use parallel build for speed
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+   cmake --build build -j   # Use parallel build for speed
    ```
 
 3. Run the executable (from the build directory):
