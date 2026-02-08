@@ -21,13 +21,28 @@ COPY CMakeLists.txt /app/
 COPY example/ /app/example/
 COPY src/ /app/src/ 
 
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static" \
     && cmake --build build --parallel
 
-FROM ubuntu:22.04 AS runtime
+
+FROM frolvlad/alpine-glibc:latest AS runtime
+
+RUN apk add --no-cache tini 
 
 WORKDIR /app
 
 COPY --from=builder /app/build/QKD_LDPC /app/QKD_LDPC
 
-ENTRYPOINT ["/app/QKD_LDPC"]
+ENTRYPOINT ["/sbin/tini", "--", "/app/QKD_LDPC"]
+
+# FROM ubuntu:22.04 AS runtime
+
+# RUN apt-get update && apt-get install -y \
+#     tini \
+#     && rm -rf /var/lib/apt/lists/*
+
+# WORKDIR /app
+
+# COPY --from=builder /app/build/QKD_LDPC /app/QKD_LDPC
+
+# ENTRYPOINT ["/usr/bin/tini", "--", "/app/QKD_LDPC"]
