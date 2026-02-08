@@ -1,13 +1,9 @@
 services:
   qkd_ldpc:
     build: .
-    init: true
     image: qkd_ldpc_v:latest
     container_name: qkd_ldpc
     volumes:
       - ./sparse_matrices:/app/sparse_matrices
       - ./results:/app/results
       - ./configs:/app/configs
-    working_dir: /app
-    stdin_open: true
-    tty: true
